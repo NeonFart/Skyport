@@ -9,7 +9,7 @@ class CompatibleArgon2IdHasher extends Argon2IdHasher
     /**
      * @var array<int, string>
      */
-    private const LEGACY_ALGORITHMS = ["argon2i", "bcrypt"];
+    private const LEGACY_ALGORITHMS = ['argon2i', 'bcrypt'];
 
     public function check(
         #[\SensitiveParameter] $value,
@@ -48,7 +48,7 @@ class CompatibleArgon2IdHasher extends Argon2IdHasher
     private function usesLegacyAlgorithm(string $hashedValue): bool
     {
         return in_array(
-            $this->info($hashedValue)["algoName"] ?? null,
+            $this->info($hashedValue)['algoName'] ?? null,
             self::LEGACY_ALGORITHMS,
             true,
         );

@@ -16,7 +16,9 @@ class ServerPowerController extends Controller
 {
     use AuthorizesServerAccess;
 
-    public function __construct(private ServerPowerService $serverPowerService) {}
+    public function __construct(
+        private ServerPowerService $serverPowerService,
+    ) {}
 
     public function store(
         StoreServerPowerRequest $request,
@@ -30,9 +32,12 @@ class ServerPowerController extends Controller
                 $request->validated('signal'),
             );
         } catch (InvalidArgumentException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return response()->json(
+                [
+                    'message' => $exception->getMessage(),
+                ],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
         return response()->json([

@@ -1,10 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import { useState } from 'react';
-import {
-    destroy,
-    edit as editSessions,
-} from '@/actions/App/Http/Controllers/Settings/SessionsController';
+import { destroy, edit as editSessions } from '@/routes/sessions';
 import Heading from '@/components/heading';
 import {
     AlertDialog,
@@ -32,6 +29,8 @@ type Session = {
 };
 
 type Props = {
+    canManageSessions: boolean;
+    sessionManagementNotice: string | null;
     sessions: Session[];
 };
 
@@ -108,7 +107,11 @@ function osName(userAgent: string | null): string {
     return 'Unknown OS';
 }
 
-export default function Sessions({ sessions }: Props) {
+export default function Sessions({
+    canManageSessions,
+    sessionManagementNotice,
+    sessions,
+}: Props) {
     const [revoking, setRevoking] = useState<string | null>(null);
     const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
 
@@ -121,7 +124,9 @@ export default function Sessions({ sessions }: Props) {
                 setConfirmRevoke(null);
             },
             onError: (errors) => {
-                Object.values(errors).forEach((m) => toast.error(m));
+                Object.values(errors).forEach((message) => {
+                    toast.error(message);
+                });
             },
             onFinish: () => setRevoking(null),
         });
@@ -140,6 +145,12 @@ export default function Sessions({ sessions }: Props) {
                         title="Active sessions"
                         description="Manage your active sessions across devices. Revoke any session you don't recognize."
                     />
+
+                    {sessionManagementNotice ? (
+                        <p className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                            {sessionManagementNotice}
+                        </p>
+                    ) : null}
 
                     <div className="space-y-3">
                         {sessions.map((session) => (
@@ -163,7 +174,7 @@ export default function Sessions({ sessions }: Props) {
                                         &middot; {session.last_activity}
                                     </p>
                                 </div>
-                                {!session.is_current && (
+                                {canManageSessions && !session.is_current && (
                                     <Button
                                         variant="ghost"
                                         size="sm"

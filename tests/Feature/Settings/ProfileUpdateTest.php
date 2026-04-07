@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\UserActivity;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -47,6 +48,7 @@ test('user can delete their account', function () {
 
     $this->assertGuest();
     expect($user->fresh())->toBeNull();
+    expect(UserActivity::query()->count())->toBe(0);
 });
 
 test('correct password must be provided to delete account', function () {

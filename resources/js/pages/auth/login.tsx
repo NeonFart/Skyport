@@ -1,25 +1,28 @@
-import { Form, Head } from "@inertiajs/react";
-import { KeyRound } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "@/components/ui/sonner";
-import PasskeyAuthenticationController from "@/actions/App/Http/Controllers/Auth/PasskeyAuthenticationController";
-import PasswordInput from "@/components/password-input";
-import TextLink from "@/components/text-link";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
-import AuthLayout from "@/layouts/auth-layout";
+import { Form, Head } from '@inertiajs/react';
+import { KeyRound } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+    create as passkeyOptions,
+    store as passkeyLogin,
+} from '@/routes/passkeys/authentication';
+import { toast } from '@/components/ui/sonner';
+import PasswordInput from '@/components/password-input';
+import TextLink from '@/components/text-link';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import AuthLayout from '@/layouts/auth-layout';
 import {
     authenticateWithPasskey,
     conditionalMediationAvailable,
     passkeyAutocomplete,
     passkeysAreSupported,
-} from "@/lib/passkeys";
-import { register } from "@/routes";
-import { store } from "@/routes/login";
-import { request } from "@/routes/password/index";
+} from '@/lib/passkeys';
+import { register } from '@/routes';
+import { store } from '@/routes/login';
+import { request } from '@/routes/password/index';
 
 type Props = {
     status?: string;
@@ -59,8 +62,8 @@ export default function Login({
 
             try {
                 const redirect = await authenticateWithPasskey(
-                    PasskeyAuthenticationController.create.url(),
-                    PasskeyAuthenticationController.store.url(),
+                    passkeyOptions.url(),
+                    passkeyLogin.url(),
                     false,
                     true,
                     abortController.current.signal,
@@ -72,8 +75,8 @@ export default function Login({
             } catch (error) {
                 if (
                     error instanceof DOMException &&
-                    (error.name === "AbortError" ||
-                        error.name === "NotAllowedError")
+                    (error.name === 'AbortError' ||
+                        error.name === 'NotAllowedError')
                 ) {
                     return;
                 }
@@ -88,7 +91,7 @@ export default function Login({
 
     const handlePasskeyLogin = async (): Promise<void> => {
         if (!canUsePasskeys || !passkeysAreSupported()) {
-            toast.error("This browser does not support passkeys.");
+            toast.error('This browser does not support passkeys.');
 
             return;
         }
@@ -98,8 +101,8 @@ export default function Login({
 
         try {
             const redirect = await authenticateWithPasskey(
-                PasskeyAuthenticationController.create.url(),
-                PasskeyAuthenticationController.store.url(),
+                passkeyOptions.url(),
+                passkeyLogin.url(),
                 false,
                 false,
             );
@@ -111,7 +114,7 @@ export default function Login({
             const message =
                 error instanceof Error
                     ? error.message
-                    : "Unable to sign in with a passkey.";
+                    : 'Unable to sign in with a passkey.';
             toast.error(message);
         } finally {
             setPasskeyProcessing(false);
@@ -127,7 +130,7 @@ export default function Login({
 
             <Form
                 {...store.form()}
-                resetOnSuccess={["password"]}
+                resetOnSuccess={['password']}
                 onStart={() => {
                     abortController.current?.abort();
                 }}
@@ -215,7 +218,7 @@ export default function Login({
 
                         {canRegister && (
                             <div className="text-center text-sm text-muted-foreground">
-                                Don't have an account?{" "}
+                                Don't have an account?{' '}
                                 <TextLink href={register()} tabIndex={5}>
                                     Sign up
                                 </TextLink>

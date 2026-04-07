@@ -31,7 +31,7 @@ class RecordUserActivity
 
         $user ??= $request->user();
 
-        if (! $user) {
+        if (! $user || ! $user->exists) {
             return $response;
         }
 

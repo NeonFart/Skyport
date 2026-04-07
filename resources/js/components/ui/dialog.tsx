@@ -2,13 +2,17 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
 import * as React from "react"
 
-import {
-  centeredDialogMotionClass,
-  dialogOverlayMotionClass,
-  fullscreenDialogMotionClass,
-} from "@/components/ui/dialog-motion"
 import { PlaceholderPattern } from "@/components/ui/placeholder-pattern"
 import { cn } from "@/lib/utils"
+
+const overlayMotionClass =
+  "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:duration-200 data-[state=open]:duration-300 motion-reduce:data-[state=closed]:duration-0 motion-reduce:data-[state=open]:duration-0"
+
+const centeredContentMotionClass =
+  "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-top-[52%] data-[state=closed]:duration-200 data-[state=open]:duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:data-[state=closed]:duration-0 motion-reduce:data-[state=open]:duration-0"
+
+const fullscreenContentMotionClass =
+  "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-[0.985] data-[state=open]:zoom-in-[0.985] data-[state=closed]:slide-out-to-top-[2%] data-[state=open]:slide-in-from-top-[4%] data-[state=closed]:duration-200 data-[state=open]:duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:data-[state=closed]:duration-0 motion-reduce:data-[state=open]:duration-0"
 
 function Dialog({
   ...props
@@ -43,14 +47,14 @@ function DialogOverlay({
       data-slot="dialog-overlay"
       className={cn(
         "fixed inset-0 z-50 bg-black/70 backdrop-blur-sm",
-        dialogOverlayMotionClass,
+        overlayMotionClass,
         className
       )}
       {...props}
     >
       <PlaceholderPattern
         patternSize={8}
-        className="size-full stroke-white/[0.04]"
+        className="size-full stroke-white/4"
       />
     </DialogPrimitive.Overlay>
   )
@@ -96,9 +100,11 @@ function DialogCloseNotch() {
       style={{ width: 60, height: 60 }}
     >
       <svg
+        aria-hidden="true"
         viewBox="0 0 60 60"
         className="absolute inset-0 size-full"
         fill="none"
+        focusable="false"
       >
         <defs>
           <pattern id="notch-diag" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
@@ -111,7 +117,7 @@ function DialogCloseNotch() {
         <path d={shape} fill="url(#notch-diag)" />
         <path d={border} className="stroke-border/50" strokeWidth={1} fill="none" />
       </svg>
-      <span className="absolute top-[15px] right-[15px] flex items-center justify-center text-muted-foreground transition-colors group-hover:text-foreground">
+      <span className="absolute top-3.75 right-3.75 flex items-center justify-center text-muted-foreground transition-colors group-hover:text-foreground">
         <XIcon className="size-4" />
       </span>
       <span className="sr-only">Close</span>
@@ -131,7 +137,7 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "bg-background fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-hidden rounded-lg border p-6 shadow-2xl sm:max-w-lg",
-          centeredDialogMotionClass,
+          centeredContentMotionClass,
           className
         )}
         {...props}
@@ -204,7 +210,7 @@ function DialogContentFull({
         data-slot="dialog-content"
         className={cn(
           "bg-background fixed inset-4 z-50 flex min-h-0 flex-col overflow-hidden rounded-xl border shadow-2xl sm:inset-6 lg:inset-8",
-          fullscreenDialogMotionClass,
+          fullscreenContentMotionClass,
           className
         )}
         {...props}

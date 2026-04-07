@@ -2,13 +2,21 @@ import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
 import * as React from "react"
 
-import {
-  dialogOverlayMotionClass,
-  sheetMotionClass,
-  sheetSideMotionClass,
-} from "@/components/ui/dialog-motion"
 import { PlaceholderPattern } from "@/components/ui/placeholder-pattern"
 import { cn } from "@/lib/utils"
+
+const overlayMotionClass =
+  "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:duration-200 data-[state=open]:duration-300 motion-reduce:data-[state=closed]:duration-0 motion-reduce:data-[state=open]:duration-0"
+
+const contentMotionClass =
+  "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:duration-200 data-[state=open]:duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:data-[state=closed]:duration-0 motion-reduce:data-[state=open]:duration-0"
+
+const sideMotionClass = {
+  right: "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
+  left: "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
+  top: "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+  bottom: "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+} as const
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -41,14 +49,14 @@ function SheetOverlay({
       data-slot="sheet-overlay"
       className={cn(
         "fixed inset-0 z-50 bg-black/70 backdrop-blur-sm",
-        dialogOverlayMotionClass,
+        overlayMotionClass,
         className
       )}
       {...props}
     >
       <PlaceholderPattern
         patternSize={8}
-        className="size-full stroke-white/[0.04]"
+        className="size-full stroke-white/4"
       />
     </SheetPrimitive.Overlay>
   )
@@ -69,15 +77,15 @@ function SheetContent({
         data-slot="sheet-content"
         className={cn(
           "bg-background fixed z-50 flex flex-col gap-4 shadow-2xl",
-          sheetMotionClass,
+          contentMotionClass,
           side === "right" &&
-            `${sheetSideMotionClass.right} inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm`,
+            `${sideMotionClass.right} inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm`,
           side === "left" &&
-            `${sheetSideMotionClass.left} inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm`,
+            `${sideMotionClass.left} inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm`,
           side === "top" &&
-            `${sheetSideMotionClass.top} inset-x-0 top-0 h-auto border-b`,
+            `${sideMotionClass.top} inset-x-0 top-0 h-auto border-b`,
           side === "bottom" &&
-            `${sheetSideMotionClass.bottom} inset-x-0 bottom-0 h-auto border-t`,
+            `${sideMotionClass.bottom} inset-x-0 bottom-0 h-auto border-t`,
           className
         )}
         {...props}

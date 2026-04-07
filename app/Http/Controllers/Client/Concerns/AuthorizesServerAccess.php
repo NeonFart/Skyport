@@ -13,7 +13,8 @@ trait AuthorizesServerAccess
         Server $server,
     ): void {
         abort_unless(
-            $request->user()?->is_admin || $server->user_id === $request->user()?->id,
+            $request->user()?->is_admin ||
+                $server->user_id === $request->user()?->id,
             Response::HTTP_FORBIDDEN,
         );
     }

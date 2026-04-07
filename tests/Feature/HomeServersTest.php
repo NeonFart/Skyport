@@ -166,3 +166,27 @@ test('home page renders an empty server list when the servers table is unavailab
             ->where('filters.scope', 'mine')
             ->has('servers.data', 0));
 });
+
+test('home page still renders when a server allocation has been removed', function () {
+    $dependencies = homeServerDependencies();
+    $user = User::factory()->create();
+    $allocation = Allocation::factory()->create([
+        'node_id' => $dependencies['node']->id,
+    ]);
+    $server = Server::factory()->create([
+        'allocation_id' => $allocation->id,
+        'cargo_id' => $dependencies['cargo']->id,
+        'node_id' => $dependencies['node']->id,
+        'user_id' => $user->id,
+    ]);
+
+    $allocation->delete();
+
+    actingAs($user);
+
+    get('/home')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('servers.data.0.id', $server->id)
+            ->where('servers.data.0.allocation', null));
+});

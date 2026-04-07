@@ -14,15 +14,15 @@ import type { NavItem } from '@/types';
 const settingsActivityHref = '/settings/activity';
 const settingsPreferencesHref = '/settings/preferences';
 
-const sidebarNavItems: Array<NavItem & { href: NonNullable<NavItem["href"]> }> =
+const sidebarNavItems: Array<NavItem & { href: NonNullable<NavItem['href']> }> =
     [
         {
-            title: "Profile",
+            title: 'Profile',
             href: edit(),
             icon: null,
         },
         {
-            title: "Security",
+            title: 'Security',
             href: editSecurity(),
             icon: null,
         },
@@ -37,7 +37,7 @@ const sidebarNavItems: Array<NavItem & { href: NonNullable<NavItem["href"]> }> =
             icon: null,
         },
         {
-            title: "Preferences",
+            title: 'Preferences',
             href: settingsPreferencesHref,
             icon: null,
         },
@@ -62,7 +62,7 @@ export default function SettingsLayout({
     }>(() => {
         try {
             const stored = window.sessionStorage.getItem(
-                "settings-nav-indicator",
+                'settings-nav-indicator',
             );
 
             if (!stored) {
@@ -99,7 +99,7 @@ export default function SettingsLayout({
                   top: number;
               }),
     ): number | null => {
-        if (typeof window === "undefined") {
+        if (typeof window === 'undefined') {
             return null;
         }
 
@@ -152,7 +152,7 @@ export default function SettingsLayout({
         }
 
         const previousIndex = Number.parseInt(
-            window.sessionStorage.getItem("settings-nav-active-index") ?? "",
+            window.sessionStorage.getItem('settings-nav-active-index') ?? '',
             10,
         );
         const previousIndicator = Number.isNaN(previousIndex)
@@ -164,13 +164,13 @@ export default function SettingsLayout({
             const targetFrame = window.requestAnimationFrame(() => {
                 scheduleActiveIndicator(targetIndicator);
                 window.sessionStorage.setItem(
-                    "settings-nav-indicator",
+                    'settings-nav-indicator',
                     JSON.stringify(targetIndicator),
                 );
             });
 
             window.sessionStorage.setItem(
-                "settings-nav-active-index",
+                'settings-nav-active-index',
                 String(activeIndex),
             );
 
@@ -185,11 +185,11 @@ export default function SettingsLayout({
 
         const frame = scheduleActiveIndicator(targetIndicator);
         window.sessionStorage.setItem(
-            "settings-nav-active-index",
+            'settings-nav-active-index',
             String(activeIndex),
         );
         window.sessionStorage.setItem(
-            "settings-nav-indicator",
+            'settings-nav-indicator',
             JSON.stringify(targetIndicator),
         );
 
@@ -230,10 +230,10 @@ export default function SettingsLayout({
 
         updateIndicator();
 
-        window.addEventListener("resize", updateIndicator);
+        window.addEventListener('resize', updateIndicator);
 
         return () => {
-            window.removeEventListener("resize", updateIndicator);
+            window.removeEventListener('resize', updateIndicator);
         };
     }, [currentUrl, isCurrentOrParentUrl]);
 
@@ -266,13 +266,13 @@ export default function SettingsLayout({
                                 href={item.href}
                                 className={cn(
                                     buttonVariants({
-                                        size: "sm",
-                                        variant: "ghost",
+                                        size: 'sm',
+                                        variant: 'ghost',
                                     }),
-                                    "relative z-10 w-full justify-start bg-transparent text-muted-foreground hover:bg-transparent hover:text-foreground active:bg-transparent",
+                                    'relative z-10 w-full justify-start bg-transparent text-muted-foreground hover:bg-transparent hover:text-foreground active:bg-transparent',
                                     isCurrentOrParentUrl(item.href)
-                                        ? "bg-transparent font-medium text-foreground"
-                                        : "bg-transparent",
+                                        ? 'bg-transparent font-medium text-foreground'
+                                        : 'bg-transparent',
                                 )}
                                 data-settings-nav-item-index={index}
                             >
@@ -285,9 +285,9 @@ export default function SettingsLayout({
 
                 <Separator className="my-6 lg:hidden" />
 
-                <div className={cn("flex-1 md:max-w-2xl", contentClassName)}>
+                <div className={cn('flex-1 md:max-w-2xl', contentClassName)}>
                     <section
-                        className={cn("max-w-xl space-y-12", sectionClassName)}
+                        className={cn('max-w-xl space-y-12', sectionClassName)}
                     >
                         {children}
                     </section>

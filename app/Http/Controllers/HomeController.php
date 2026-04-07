@@ -54,11 +54,13 @@ class HomeController extends Controller
             ->paginate(10)
             ->through(
                 fn (Server $server): array => [
-                    'allocation' => [
-                        'bind_ip' => $server->allocation->bind_ip,
-                        'ip_alias' => $server->allocation->ip_alias,
-                        'port' => $server->allocation->port,
-                    ],
+                    'allocation' => $server->allocation
+                        ? [
+                            'bind_ip' => $server->allocation->bind_ip,
+                            'ip_alias' => $server->allocation->ip_alias,
+                            'port' => $server->allocation->port,
+                        ]
+                        : null,
                     'cpu_limit' => $server->cpu_limit,
                     'id' => $server->id,
                     'memory_mib' => $server->memory_mib,

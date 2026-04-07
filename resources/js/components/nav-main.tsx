@@ -541,9 +541,9 @@ function NavMainItem({ item, index }: { item: NavItem; index: number }) {
                                 Pin &ldquo;{item.title}&rdquo;?
                             </DialogTitle>
                             <DialogDescription>
-                                If you frequently use this service from Skyport, you
-                                can also change the default page you&apos;ll be
-                                redirected to upon login.{' '}
+                                If you frequently use this service from Skyport,
+                                you can also change the default page you&apos;ll
+                                be redirected to upon login.{' '}
                                 <Link
                                     href={settingsPreferencesHref}
                                     onClick={() => setPinModalOpen(false)}

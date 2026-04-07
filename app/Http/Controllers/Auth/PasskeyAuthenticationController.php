@@ -13,10 +13,14 @@ class PasskeyAuthenticationController extends Controller
 {
     public function __construct(private PasskeyService $passkeyService) {}
 
-    public function create(PasskeyAuthenticationOptionsRequest $request): JsonResponse
-    {
+    public function create(
+        PasskeyAuthenticationOptionsRequest $request,
+    ): JsonResponse {
         return response()->json(
-            $this->passkeyService->authenticationOptions($request->session(), $request->getHost()),
+            $this->passkeyService->authenticationOptions(
+                $request->session(),
+                $request->getHost(),
+            ),
         );
     }
 
@@ -31,7 +35,9 @@ class PasskeyAuthenticationController extends Controller
         );
 
         return response()->json([
-            'redirect' => redirect()->intended(route('home', absolute: false))->getTargetUrl(),
+            'redirect' => redirect()
+                ->intended(route('home', absolute: false))
+                ->getTargetUrl(),
         ]);
     }
 }

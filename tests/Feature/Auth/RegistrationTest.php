@@ -14,13 +14,12 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
-    $response = $this
-        ->post(route('register.store'), [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
+    $response = $this->post(route('register.store'), [
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => 'StrongPass123!',
+        'password_confirmation' => 'StrongPass123!',
+    ]);
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('home', absolute: false));
@@ -30,8 +29,8 @@ test('new user passwords are hashed with argon2id', function () {
     $this->post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'argon@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => 'StrongPass123!',
+        'password_confirmation' => 'StrongPass123!',
     ]);
 
     $user = User::query()->where('email', 'argon@example.com')->firstOrFail();

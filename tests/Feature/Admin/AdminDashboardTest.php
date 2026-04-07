@@ -6,10 +6,14 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 function panelCommit(): string
 {
-    $commit = trim((string) shell_exec(sprintf(
-        'git -C %s rev-parse --short HEAD 2>/dev/null',
-        escapeshellarg(base_path()),
-    )));
+    $commit = trim(
+        (string) shell_exec(
+            sprintf(
+                'git -C %s rev-parse --short HEAD 2>/dev/null',
+                escapeshellarg(base_path()),
+            ),
+        ),
+    );
 
     return $commit !== '' ? $commit : 'unknown';
 }
@@ -17,9 +21,7 @@ function panelCommit(): string
 it('forbids non-admins from viewing the admin dashboard', function () {
     $user = User::factory()->create(['is_admin' => false]);
 
-    $this->actingAs($user)
-        ->get('/admin')
-        ->assertForbidden();
+    $this->actingAs($user)->get('/admin')->assertForbidden();
 });
 
 it('shows the admin overview with recent user creation data', function () {
@@ -45,22 +47,23 @@ it('shows the admin overview with recent user creation data', function () {
     $this->actingAs($admin)
         ->get('/admin')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('admin/dashboard')
-            ->where('recentUsersTotal', 2)
-            ->has('recentUsers', 30)
-            ->where('recentUsers.28.amount', 1)
-            ->where('recentUsers.29.amount', 1)
-            ->has('recentServers', 30)
-            ->has('recentServersTotal')
-            ->has('nodes')
-            ->has('totalNodes')
-            ->has('totalMemoryMib')
-            ->has('totalDiskMib')
-            ->where('version', config('app.version'))
-            ->where('commit', panelCommit())
-            ->has('usersTrendText')
-            ->has('serversTrendText'),
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('admin/dashboard')
+                ->where('recentUsersTotal', 2)
+                ->has('recentUsers', 30)
+                ->where('recentUsers.28.amount', 1)
+                ->where('recentUsers.29.amount', 1)
+                ->has('recentServers', 30)
+                ->has('recentServersTotal')
+                ->has('nodes')
+                ->has('totalNodes')
+                ->has('totalMemoryMib')
+                ->has('totalDiskMib')
+                ->where('version', config('app.version'))
+                ->where('commit', panelCommit())
+                ->has('usersTrendText')
+                ->has('serversTrendText'),
         );
 
     Carbon::setTestNow();

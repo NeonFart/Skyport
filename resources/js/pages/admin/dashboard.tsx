@@ -87,8 +87,8 @@ function ChartCard({
 }) {
     return (
         <div className="relative flex h-full flex-col gap-1 rounded-md bg-sidebar p-1">
-            <div className="relative flex aspect-[16/7] flex-col justify-between overflow-hidden rounded-md border border-sidebar-accent bg-background p-4">
-                <div className="absolute inset-x-0 bottom-0 z-10 h-1/3 bg-gradient-to-t from-background to-transparent" />
+            <div className="relative flex aspect-16/7 flex-col justify-between overflow-hidden rounded-md border border-sidebar-accent bg-background p-4">
+                <div className="absolute inset-x-0 bottom-0 z-10 h-1/3 bg-linear-to-t from-background to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 h-2/4">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart

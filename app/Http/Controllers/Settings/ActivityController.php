@@ -12,7 +12,9 @@ class ActivityController extends Controller
 {
     public function edit(Request $request): Response
     {
-        $activities = $request->user()->activities()
+        $activities = $request
+            ->user()
+            ->activities()
             ->latest()
             ->paginate(5)
             ->through(function (UserActivity $activity): array {

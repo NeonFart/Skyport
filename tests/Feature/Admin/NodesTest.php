@@ -19,8 +19,7 @@ test('non-admin cannot access admin nodes page', function () {
 
     actingAs($user);
 
-    get('/admin/nodes')
-        ->assertForbidden();
+    get('/admin/nodes')->assertForbidden();
 });
 
 test('admin can access nodes page', function () {
@@ -36,35 +35,49 @@ test('admin can access nodes page', function () {
 
     actingAs($admin);
 
-    get('/admin/nodes')
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+    $response = get('/admin/nodes')->assertOk();
+
+    assertInertiaPage(
+        $response,
+        fn (Assert $page) => $page
             ->component('admin/nodes')
             ->has('nodes.data', 1)
             ->where('nodes.data.0.name', $node->name)
             ->where('nodes.data.0.daemon_version', config('app.version'))
             ->where('nodes.data.0.connection_status', 'online')
-            ->where('nodes.data.0.last_seen_at', $node->last_seen_at?->toIso8601String())
+            ->where(
+                'nodes.data.0.last_seen_at',
+                $node->last_seen_at?->toIso8601String(),
+            )
             ->has('locations', 1)
             ->where('locations.0.name', $location->name)
             ->has('filters'),
-        );
+    );
 });
 
 test('admin can search nodes', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $location = Location::factory()->create(['name' => 'Berlin']);
-    Node::factory()->create(['location_id' => $location->id, 'name' => 'Berlin 01', 'fqdn' => 'berlin-01.example.com']);
-    Node::factory()->create(['name' => 'Tokyo 01', 'fqdn' => 'tokyo-01.example.com']);
+    Node::factory()->create([
+        'location_id' => $location->id,
+        'name' => 'Berlin 01',
+        'fqdn' => 'berlin-01.example.com',
+    ]);
+    Node::factory()->create([
+        'name' => 'Tokyo 01',
+        'fqdn' => 'tokyo-01.example.com',
+    ]);
 
     actingAs($admin);
 
-    get('/admin/nodes?search=Berlin')
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+    $response = get('/admin/nodes?search=Berlin')->assertOk();
+
+    assertInertiaPage(
+        $response,
+        fn (Assert $page) => $page
             ->has('nodes.data', 1)
             ->where('nodes.data.0.name', 'Berlin 01'),
-        );
+    );
 });
 
 test('admin nodes page paginates results', function () {
@@ -81,15 +94,17 @@ test('admin nodes page paginates results', function () {
 
     actingAs($admin);
 
-    get('/admin/nodes?page=2')
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+    $response = get('/admin/nodes?page=2')->assertOk();
+
+    assertInertiaPage(
+        $response,
+        fn (Assert $page) => $page
             ->where('nodes.current_page', 2)
             ->where('nodes.last_page', 2)
             ->where('nodes.total', 11)
             ->has('nodes.data', 1)
             ->where('nodes.data.0.name', 'Node 1'),
-        );
+    );
 });
 
 test('admin can create a node', function () {
@@ -105,8 +120,7 @@ test('admin can create a node', function () {
         'daemon_port' => 2800,
         'sftp_port' => 3128,
         'use_ssl' => true,
-    ])
-        ->assertRedirect();
+    ])->assertRedirect();
 
     $node = Node::query()->where('name', 'Amsterdam 01')->first();
 
@@ -115,92 +129,107 @@ test('admin can create a node', function () {
     expect($node?->use_ssl)->toBeTrue();
 });
 
-test('admin can update a node and push the new config to skyportd', function () {
-    Http::fake([
-        'http://node-01.example.com:2800/api/daemon/configuration/sync' => Http::response([
-            'ok' => true,
-        ]),
-    ]);
+test(
+    'admin can update a node and push the new config to skyportd',
+    function () {
+        Http::fake([
+            'http://node-01.example.com:2800/api/daemon/configuration/sync' => Http::response(
+                [
+                    'ok' => true,
+                ],
+            ),
+        ]);
 
-    $admin = User::factory()->create(['is_admin' => true]);
-    $location = Location::factory()->create();
-    $otherLocation = Location::factory()->create();
-    $node = Node::factory()->create([
-        'daemon_port' => 2800,
-        'daemon_uuid' => '550e8400-e29b-41d4-a716-446655440000',
-        'fqdn' => 'node-01.example.com',
-        'location_id' => $location->id,
-        'status' => 'online',
-        'use_ssl' => false,
-    ]);
-    NodeCredential::factory()->create([
-        'daemon_callback_token' => 'callback-token',
-        'node_id' => $node->id,
-    ]);
+        $admin = User::factory()->create(['is_admin' => true]);
+        $location = Location::factory()->create();
+        $otherLocation = Location::factory()->create();
+        $node = Node::factory()->create([
+            'daemon_port' => 2800,
+            'daemon_uuid' => '550e8400-e29b-41d4-a716-446655440000',
+            'fqdn' => 'node-01.example.com',
+            'location_id' => $location->id,
+            'status' => 'online',
+            'use_ssl' => false,
+        ]);
+        NodeCredential::factory()->create([
+            'daemon_callback_token' => 'callback-token',
+            'node_id' => $node->id,
+        ]);
 
-    actingAs($admin);
+        actingAs($admin);
 
-    patch("/admin/nodes/{$node->id}", [
-        'name' => 'Updated Node',
-        'location_id' => $otherLocation->id,
-        'fqdn' => 'node-01.example.com',
-        'daemon_port' => 2900,
-        'sftp_port' => 3228,
-        'use_ssl' => false,
-    ])
-        ->assertRedirect()
-        ->assertSessionHas('success', 'Node updated. skyportd applied the new configuration.');
+        patch("/admin/nodes/{$node->id}", [
+            'name' => 'Updated Node',
+            'location_id' => $otherLocation->id,
+            'fqdn' => 'node-01.example.com',
+            'daemon_port' => 2900,
+            'sftp_port' => 3228,
+            'use_ssl' => false,
+        ])
+            ->assertRedirect()
+            ->assertSessionHas(
+                'success',
+                'Node updated. skyportd applied the new configuration.',
+            );
 
-    Http::assertSent(function ($request) {
-        return $request->url() === 'http://node-01.example.com:2800/api/daemon/configuration/sync'
-            && $request->hasHeader('Authorization', 'Bearer callback-token')
-            && $request['daemon_port'] === 2900
-            && $request['sftp_port'] === 3228;
-    });
+        Http::assertSent(function ($request) {
+            return $request->url() ===
+                'http://node-01.example.com:2800/api/daemon/configuration/sync' &&
+                $request->hasHeader('Authorization', 'Bearer callback-token') &&
+                $request['daemon_port'] === 2900 &&
+                $request['sftp_port'] === 3228;
+        });
 
-    $node->refresh();
+        $node->refresh();
 
-    expect($node->name)->toBe('Updated Node');
-    expect($node->location_id)->toBe($otherLocation->id);
-    expect($node->daemon_port)->toBe(2900);
-    expect($node->sftp_port)->toBe(3228);
-    expect($node->use_ssl)->toBeFalse();
-});
+        expect($node->name)->toBe('Updated Node');
+        expect($node->location_id)->toBe($otherLocation->id);
+        expect($node->daemon_port)->toBe(2900);
+        expect($node->sftp_port)->toBe(3228);
+        expect($node->use_ssl)->toBeFalse();
+    },
+);
 
-test('admin update warns when skyportd could not be updated automatically', function () {
-    Http::fake([
-        '*' => Http::response([], 500),
-    ]);
+test(
+    'admin update warns when skyportd could not be updated automatically',
+    function () {
+        Http::fake([
+            '*' => Http::response([], 500),
+        ]);
 
-    $admin = User::factory()->create(['is_admin' => true]);
-    $location = Location::factory()->create();
-    $node = Node::factory()->create([
-        'daemon_port' => 2800,
-        'daemon_uuid' => '550e8400-e29b-41d4-a716-446655440000',
-        'fqdn' => 'node-01.example.com',
-        'location_id' => $location->id,
-        'status' => 'online',
-        'use_ssl' => false,
-    ]);
-    NodeCredential::factory()->create([
-        'daemon_callback_token' => 'callback-token',
-        'node_id' => $node->id,
-    ]);
+        $admin = User::factory()->create(['is_admin' => true]);
+        $location = Location::factory()->create();
+        $node = Node::factory()->create([
+            'daemon_port' => 2800,
+            'daemon_uuid' => '550e8400-e29b-41d4-a716-446655440000',
+            'fqdn' => 'node-01.example.com',
+            'location_id' => $location->id,
+            'status' => 'online',
+            'use_ssl' => false,
+        ]);
+        NodeCredential::factory()->create([
+            'daemon_callback_token' => 'callback-token',
+            'node_id' => $node->id,
+        ]);
 
-    actingAs($admin);
+        actingAs($admin);
 
-    patch("/admin/nodes/{$node->id}", [
-        'name' => 'Updated Node',
-        'location_id' => $location->id,
-        'fqdn' => 'node-01.example.com',
-        'daemon_port' => 2900,
-        'sftp_port' => 3228,
-        'use_ssl' => false,
-    ])
-        ->assertRedirect()
-        ->assertSessionHas('success', 'Node updated.')
-        ->assertSessionHas('warning', 'skyportd could not be updated automatically. This node will need to be reconfigured.');
-});
+        patch("/admin/nodes/{$node->id}", [
+            'name' => 'Updated Node',
+            'location_id' => $location->id,
+            'fqdn' => 'node-01.example.com',
+            'daemon_port' => 2900,
+            'sftp_port' => 3228,
+            'use_ssl' => false,
+        ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Node updated.')
+            ->assertSessionHas(
+                'warning',
+                'skyportd could not be updated automatically. This node will need to be reconfigured.',
+            );
+    },
+);
 
 test('admin can generate a configuration token', function () {
     $admin = User::factory()->create(['is_admin' => true]);
@@ -235,12 +264,14 @@ test('admin nodes page shows derived connection status', function () {
 
     actingAs($admin);
 
-    get('/admin/nodes')
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+    $response = get('/admin/nodes')->assertOk();
+
+    assertInertiaPage(
+        $response,
+        fn (Assert $page) => $page
             ->where('nodes.data.0.id', $node->id)
             ->where('nodes.data.0.connection_status', 'offline'),
-        );
+    );
 });
 
 test('admin can delete a node', function () {
@@ -249,10 +280,9 @@ test('admin can delete a node', function () {
 
     actingAs($admin);
 
-    delete("/admin/nodes/{$node->id}")
-        ->assertRedirect();
+    delete("/admin/nodes/{$node->id}")->assertRedirect();
 
-    expect(Node::find($node->id))->toBeNull();
+    expect(Node::query()->find($node->id))->toBeNull();
 });
 
 test('admin can bulk delete nodes', function () {
@@ -263,8 +293,7 @@ test('admin can bulk delete nodes', function () {
 
     delete('/admin/nodes/bulk-destroy', [
         'ids' => $nodes->pluck('id')->all(),
-    ])
-        ->assertRedirect();
+    ])->assertRedirect();
 
-    expect(Node::whereIn('id', $nodes->pluck('id'))->count())->toBe(0);
+    expect(Node::query()->whereIn('id', $nodes->pluck('id'))->count())->toBe(0);
 });

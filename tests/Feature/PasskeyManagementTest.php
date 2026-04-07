@@ -13,32 +13,38 @@ test('security page includes registered passkeys', function () {
     ]);
 
     $user = User::factory()->create();
-    $passkey = Passkey::factory()->for($user)->create([
-        'name' => 'MacBook Touch ID',
-    ]);
+    $passkey = Passkey::factory()
+        ->for($user)
+        ->create([
+            'name' => 'MacBook Touch ID',
+        ]);
 
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
         ->get(route('security.edit'))
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/security')
-            ->where('passkeys.0.id', $passkey->id)
-            ->where('passkeys.0.name', 'MacBook Touch ID'),
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('settings/security')
+                ->where('passkeys.0.id', $passkey->id)
+                ->where('passkeys.0.name', 'MacBook Touch ID'),
         );
 });
 
-test('authenticated users can request passkey registration options', function () {
-    $user = User::factory()->create();
+test(
+    'authenticated users can request passkey registration options',
+    function () {
+        $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->getJson(route('passkeys.create'));
+        $response = $this->actingAs($user)->getJson(route('passkeys.create'));
 
-    $response
-        ->assertOk()
-        ->assertJsonPath('publicKey.rp.name', config('app.name'))
-        ->assertJsonPath('publicKey.user.name', $user->email);
+        $response
+            ->assertOk()
+            ->assertJsonPath('publicKey.rp.name', config('app.name'))
+            ->assertJsonPath('publicKey.user.name', $user->email);
 
-    expect(session('passkeys.registration.challenge'))->not->toBeEmpty();
-});
+        expect(session('passkeys.registration.challenge'))->not->toBeEmpty();
+    },
+);
 
 test('authenticated users can register a passkey', function () {
     $user = User::factory()->create();
@@ -59,7 +65,8 @@ test('authenticated users can register a passkey', function () {
 
     expect($storedPasskey)
         ->not->toBeNull()
-        ->and($storedPasskey->credential_id)->toBe($payload['credential']['rawId']);
+        ->and($storedPasskey->credential_id)
+        ->toBe($payload['credential']['rawId']);
 });
 
 test('authenticated users can delete their own passkeys', function () {
@@ -78,8 +85,11 @@ test('authenticated users can delete their own passkeys', function () {
 /**
  * @return array{name: string, credential: array<string, mixed>}
  */
-function makeRegistrationPayload(string $challenge, string $origin, string $rpId): array
-{
+function makeRegistrationPayload(
+    string $challenge,
+    string $origin,
+    string $rpId,
+): array {
     $credentialId = random_bytes(32);
     $keyPair = openssl_pkey_new([
         'curve_name' => 'prime256v1',
@@ -95,13 +105,14 @@ function makeRegistrationPayload(string $challenge, string $origin, string $rpId
         [cborNegative(3), cborBytes($details['ec']['y'])],
     ]);
 
-    $authenticatorData = hash('sha256', $rpId, true)
-        .chr(0x41)
-        .pack('N', 0)
-        .str_repeat("\x00", 16)
-        .pack('n', strlen($credentialId))
-        .$credentialId
-        .$credentialPublicKey;
+    $authenticatorData =
+        hash('sha256', $rpId, true).
+        chr(0x41).
+        pack('N', 0).
+        str_repeat("\x00", 16).
+        pack('n', strlen($credentialId)).
+        $credentialId.
+        $credentialPublicKey;
 
     $attestationObject = cborMap([
         [cborText('fmt'), cborText('none')],
@@ -109,11 +120,14 @@ function makeRegistrationPayload(string $challenge, string $origin, string $rpId
         [cborText('authData'), cborBytes($authenticatorData)],
     ]);
 
-    $clientDataJson = json_encode([
-        'challenge' => $challenge,
-        'origin' => $origin,
-        'type' => 'webauthn.create',
-    ], JSON_THROW_ON_ERROR);
+    $clientDataJson = json_encode(
+        [
+            'challenge' => $challenge,
+            'origin' => $origin,
+            'type' => 'webauthn.create',
+        ],
+        JSON_THROW_ON_ERROR,
+    );
 
     return [
         'name' => 'Passkey',

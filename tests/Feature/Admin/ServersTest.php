@@ -115,6 +115,27 @@ test('admin can search servers', function () {
             ->where('servers.data.0.name', 'Paper Survival'));
 });
 
+test('admin servers page still renders when a server allocation has been removed', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $dependencies = serverDependencies();
+    $server = Server::factory()->create([
+        'cargo_id' => $dependencies['cargo']->id,
+        'allocation_id' => $dependencies['allocation']->id,
+        'node_id' => $dependencies['node']->id,
+        'user_id' => $dependencies['user']->id,
+    ]);
+
+    $dependencies['allocation']->delete();
+
+    actingAs($admin);
+
+    get('/admin/servers')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('servers.data.0.id', $server->id)
+            ->where('servers.data.0.allocation', null));
+});
+
 test('admin servers page paginates results', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $dependencies = serverDependencies();

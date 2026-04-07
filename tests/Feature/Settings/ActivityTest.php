@@ -15,13 +15,14 @@ test('activity page is displayed with paginated results', function () {
     $this->actingAs($user)
         ->get(route('activity.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/activity')
-            ->has('activities', 5)
-            ->where('meta.currentPage', 1)
-            ->where('meta.perPage', 5)
-            ->where('meta.total', 13)
-            ->has('links')
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('settings/activity')
+                ->has('activities', 5)
+                ->where('meta.currentPage', 1)
+                ->where('meta.perPage', 5)
+                ->where('meta.total', 13)
+                ->has('links'),
         );
 });
 
@@ -47,9 +48,7 @@ test('authenticated requests are recorded in the activity log', function () {
 test('read only page visits are not recorded in the activity log', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user)
-        ->get(route('profile.edit'))
-        ->assertOk();
+    $this->actingAs($user)->get(route('profile.edit'))->assertOk();
 
     expect(UserActivity::query()->whereBelongsTo($user)->count())->toBe(0);
 });

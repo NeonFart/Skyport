@@ -11,16 +11,23 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ConfigurationController extends Controller
 {
-    public function __construct(private NodeConfigurationService $nodeConfigurationService) {}
+    public function __construct(
+        private NodeConfigurationService $nodeConfigurationService,
+    ) {}
 
     public function store(ConfigureDaemonRequest $request): JsonResponse
     {
         try {
-            $payload = $this->nodeConfigurationService->enroll($request->validated());
+            $payload = $this->nodeConfigurationService->enroll(
+                $request->validated(),
+            );
         } catch (InvalidArgumentException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return response()->json(
+                [
+                    'message' => $exception->getMessage(),
+                ],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
         return response()->json($payload, Response::HTTP_CREATED);

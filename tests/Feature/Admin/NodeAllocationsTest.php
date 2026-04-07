@@ -11,7 +11,10 @@ use function Pest\Laravel\post;
 it('admin can create a single allocation for a node', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $location = Location::factory()->create();
-    $node = Node::factory()->create(['location_id' => $location->id, 'fqdn' => 'node.example.com']);
+    $node = Node::factory()->create([
+        'location_id' => $location->id,
+        'fqdn' => 'node.example.com',
+    ]);
 
     actingAs($admin);
 
@@ -32,7 +35,10 @@ it('admin can create a single allocation for a node', function () {
 it('admin can create an allocation range for a node', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $location = Location::factory()->create();
-    $node = Node::factory()->create(['location_id' => $location->id, 'fqdn' => 'node.example.com']);
+    $node = Node::factory()->create([
+        'location_id' => $location->id,
+        'fqdn' => 'node.example.com',
+    ]);
 
     actingAs($admin);
 
@@ -44,8 +50,14 @@ it('admin can create an allocation range for a node', function () {
         'end_port' => 25567,
     ])->assertRedirect();
 
-    $ports = Allocation::query()->where('node_id', $node->id)->orderBy('port')->pluck('port')->all();
+    $ports = Allocation::query()
+        ->where('node_id', $node->id)
+        ->orderBy('port')
+        ->pluck('port')
+        ->all();
 
     expect($ports)->toBe([25565, 25566, 25567]);
-    expect(Allocation::query()->where('node_id', $node->id)->value('ip_alias'))->toBe('play.example.com');
+    expect(
+        Allocation::query()->where('node_id', $node->id)->value('ip_alias'),
+    )->toBe('play.example.com');
 });

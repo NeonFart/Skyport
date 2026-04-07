@@ -17,21 +17,32 @@ Route::get('/', function () {
 });
 
 Route::middleware('guest')->group(function () {
-    Route::get('login/passkeys/options', [PasskeyAuthenticationController::class, 'create'])
-        ->name('passkeys.authentication.create');
-    Route::post('login/passkeys', [PasskeyAuthenticationController::class, 'store'])
+    Route::get('login/passkeys/options', [
+        PasskeyAuthenticationController::class,
+        'create',
+    ])->name('passkeys.authentication.create');
+    Route::post('login/passkeys', [
+        PasskeyAuthenticationController::class,
+        'store',
+    ])
         ->middleware('throttle:passkeys.login')
         ->name('passkeys.authentication.store');
 });
 
 Route::middleware(['auth'])->group(function () {
     Route::get('home', [HomeController::class, 'index'])->name('home');
-    Route::get('server/{server}/console', [ServerConsoleController::class, 'show'])
-        ->name('client.servers.console');
-    Route::post('api/client/servers/{server}/power', [ServerPowerController::class, 'store'])
-        ->name('client.servers.power');
-    Route::get('api/client/servers/{server}/websocket', [ServerWebsocketController::class, 'show'])
-        ->name('client.servers.websocket');
+    Route::get('server/{server}/console', [
+        ServerConsoleController::class,
+        'show',
+    ])->name('client.servers.console');
+    Route::post('api/client/servers/{server}/power', [
+        ServerPowerController::class,
+        'store',
+    ])->name('client.servers.power');
+    Route::get('api/client/servers/{server}/websocket', [
+        ServerWebsocketController::class,
+        'show',
+    ])->name('client.servers.websocket');
 });
 
 require __DIR__.'/settings.php';

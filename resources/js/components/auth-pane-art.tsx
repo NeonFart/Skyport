@@ -3,11 +3,13 @@ export default function AuthPaneArt() {
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute inset-0 bg-[#fff2f2] dark:bg-[#1D0002]" />
             <div className="absolute inset-x-0 top-0 h-40 bg-linear-to-b from-white/65 via-white/10 to-transparent dark:from-white/5 dark:via-transparent dark:to-transparent" />
-            <div className="absolute -top-16 right-[-5.5rem] h-72 w-72 rounded-full bg-[#f53003]/14 blur-3xl dark:bg-[#ff5a36]/16" />
-            <div className="absolute bottom-[-8rem] left-[-4rem] h-72 w-72 rounded-full bg-[#f8b803]/14 blur-3xl dark:bg-[#ff750f]/12" />
+            <div className="absolute -top-16 -right-22 h-72 w-72 rounded-full bg-[#f53003]/14 blur-3xl dark:bg-[#ff5a36]/16" />
+            <div className="absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-[#f8b803]/14 blur-3xl dark:bg-[#ff750f]/12" />
 
             <svg
-                className="absolute bottom-8 left-8 w-[280px] max-w-none [--stroke-color:#1B1B18] dark:[--stroke-color:#FF750F]"
+                aria-hidden="true"
+                className="absolute bottom-8 left-8 w-70 max-w-none [--stroke-color:#1B1B18] dark:[--stroke-color:#FF750F]"
+                focusable="false"
                 viewBox="0 0 440 392"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"

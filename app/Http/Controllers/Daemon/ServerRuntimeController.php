@@ -12,24 +12,38 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ServerRuntimeController extends Controller
 {
-    public function __construct(private ServerRuntimeUpdateService $serverRuntimeUpdateService) {}
+    public function __construct(
+        private ServerRuntimeUpdateService $serverRuntimeUpdateService,
+    ) {}
 
-    public function store(UpdateServerRuntimeRequest $request, Server $server): JsonResponse
-    {
+    public function store(
+        UpdateServerRuntimeRequest $request,
+        Server $server,
+    ): JsonResponse {
         $daemonSecret = $request->bearerToken();
 
         if (! $daemonSecret) {
-            return response()->json([
-                'message' => 'Missing daemon secret.',
-            ], Response::HTTP_UNAUTHORIZED);
+            return response()->json(
+                [
+                    'message' => 'Missing daemon secret.',
+                ],
+                Response::HTTP_UNAUTHORIZED,
+            );
         }
 
         try {
-            $server = $this->serverRuntimeUpdateService->record($daemonSecret, $server, $request->validated());
+            $server = $this->serverRuntimeUpdateService->record(
+                $daemonSecret,
+                $server,
+                $request->validated(),
+            );
         } catch (InvalidArgumentException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return response()->json(
+                [
+                    'message' => $exception->getMessage(),
+                ],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
         return response()->json([

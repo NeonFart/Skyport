@@ -20,10 +20,13 @@ class SecurityController extends Controller implements HasMiddleware
      */
     public static function middleware(): array
     {
-        return Features::canManageTwoFactorAuthentication()
-            && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')
-                ? [new Middleware('password.confirm', only: ['edit'])]
-                : [];
+        return Features::canManageTwoFactorAuthentication() &&
+            Features::optionEnabled(
+                Features::twoFactorAuthentication(),
+                'confirmPassword',
+            )
+            ? [new Middleware('password.confirm', only: ['edit'])]
+            : [];
     }
 
     /**
@@ -33,23 +36,32 @@ class SecurityController extends Controller implements HasMiddleware
     {
         $props = [
             'canManageTwoFactor' => Features::canManageTwoFactorAuthentication(),
-            'passkeys' => $request->user()->passkeys()
+            'passkeys' => $request
+                ->user()
+                ->passkeys()
                 ->latest()
                 ->get()
-                ->map(fn ($passkey): array => [
-                    'created_at' => $passkey->created_at?->toIso8601String(),
-                    'id' => $passkey->id,
-                    'last_used_at' => $passkey->last_used_at?->toIso8601String(),
-                    'name' => $passkey->name,
-                ])
+                ->map(
+                    fn ($passkey): array => [
+                        'created_at' => $passkey->created_at?->toIso8601String(),
+                        'id' => $passkey->id,
+                        'last_used_at' => $passkey->last_used_at?->toIso8601String(),
+                        'name' => $passkey->name,
+                    ],
+                )
                 ->all(),
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {
             $request->ensureStateIsValid();
 
-            $props['twoFactorEnabled'] = $request->user()->hasEnabledTwoFactorAuthentication();
-            $props['requiresConfirmation'] = Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm');
+            $props['twoFactorEnabled'] = $request
+                ->user()
+                ->hasEnabledTwoFactorAuthentication();
+            $props['requiresConfirmation'] = Features::optionEnabled(
+                Features::twoFactorAuthentication(),
+                'confirm',
+            );
         }
 
         return Inertia::render('settings/security', $props);

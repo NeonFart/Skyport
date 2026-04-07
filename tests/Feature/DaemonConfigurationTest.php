@@ -198,3 +198,29 @@ test('daemon heartbeat rejects an invalid secret', function () {
             'message' => 'The daemon secret is invalid.',
         ]);
 });
+
+test('daemon api routes are rate limited', function () {
+    foreach (range(1, 30) as $attempt) {
+        postJson(
+            '/api/daemon/heartbeat',
+            [
+                'uuid' => '550e8400-e29b-41d4-a716-446655440000',
+                'version' => config('app.version'),
+            ],
+            [
+                'Authorization' => 'Bearer daemon-rate-limit-test',
+            ],
+        )->assertUnprocessable();
+    }
+
+    postJson(
+        '/api/daemon/heartbeat',
+        [
+            'uuid' => '550e8400-e29b-41d4-a716-446655440000',
+            'version' => config('app.version'),
+        ],
+        [
+            'Authorization' => 'Bearer daemon-rate-limit-test',
+        ],
+    )->assertTooManyRequests();
+});

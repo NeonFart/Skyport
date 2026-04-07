@@ -22,11 +22,13 @@ class ServerConsoleController extends Controller
 
         return Inertia::render('server/console', [
             'server' => [
-                'allocation' => [
-                    'bind_ip' => $server->allocation->bind_ip,
-                    'ip_alias' => $server->allocation->ip_alias,
-                    'port' => $server->allocation->port,
-                ],
+                'allocation' => $server->allocation
+                    ? [
+                        'bind_ip' => $server->allocation->bind_ip,
+                        'ip_alias' => $server->allocation->ip_alias,
+                        'port' => $server->allocation->port,
+                    ]
+                    : null,
                 'allowed_actions' => ServerPowerState::mapFor($server->status),
                 'cargo' => [
                     'id' => $server->cargo->id,

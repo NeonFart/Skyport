@@ -5,6 +5,14 @@ import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    build: {
+        chunkSizeWarningLimit: 550,
+        rolldownOptions: {
+            checks: {
+                pluginTimings: false,
+            },
+        },
+    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
@@ -13,6 +21,7 @@ export default defineConfig({
         }),
         react({
             babel: {
+                compact: true,
                 plugins: ['babel-plugin-react-compiler'],
             },
         }),

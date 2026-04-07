@@ -43,11 +43,7 @@ export default function NetworkingIcon(props: SVGProps<SVGSVGElement>) {
                 stroke="currentColor"
                 strokeWidth="1.5"
             />
-            <path
-                d="M12.5 12H17"
-                stroke="currentColor"
-                strokeWidth="1.5"
-            />
+            <path d="M12.5 12H17" stroke="currentColor" strokeWidth="1.5" />
         </svg>
     );
 }

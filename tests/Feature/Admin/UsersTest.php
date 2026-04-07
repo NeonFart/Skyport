@@ -179,7 +179,7 @@ test('admin can create a user', function () {
         ->post('/admin/users', [
             'name' => 'New User',
             'email' => 'newuser@example.com',
-            'password' => 'password123',
+            'password' => 'StrongPass123!',
         ])
         ->assertRedirect();
 
@@ -195,7 +195,7 @@ test('admin can create an admin user', function () {
         ->post('/admin/users', [
             'name' => 'Admin Person',
             'email' => 'adminperson@example.com',
-            'password' => 'password123',
+            'password' => 'StrongPass123!',
             'is_admin' => true,
         ])
         ->assertRedirect();
@@ -213,7 +213,7 @@ test('admin cannot create user with duplicate email', function () {
         ->post('/admin/users', [
             'name' => 'Another User',
             'email' => 'taken@example.com',
-            'password' => 'password123',
+            'password' => 'StrongPass123!',
         ])
         ->assertSessionHasErrors('email');
 });
@@ -230,6 +230,18 @@ test('admin cannot create user with short password', function () {
         ->assertSessionHasErrors('password');
 });
 
+test('admin cannot create user with a weak password', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)
+        ->post('/admin/users', [
+            'name' => 'Weak Password User',
+            'email' => 'weak@example.com',
+            'password' => 'password123',
+        ])
+        ->assertSessionHasErrors('password');
+});
+
 test('non-admin cannot create users', function () {
     $user = User::factory()->create(['is_admin' => false]);
 
@@ -237,7 +249,7 @@ test('non-admin cannot create users', function () {
         ->post('/admin/users', [
             'name' => 'Hack',
             'email' => 'hack@x.com',
-            'password' => 'password123',
+            'password' => 'StrongPass123!',
         ])
         ->assertForbidden();
 });

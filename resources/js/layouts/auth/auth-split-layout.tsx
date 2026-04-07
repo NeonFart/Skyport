@@ -1,6 +1,6 @@
-import { usePage } from "@inertiajs/react";
-import AuthPaneArt from "@/components/auth-pane-art";
-import type { AuthLayoutProps } from "@/types";
+import { usePage } from '@inertiajs/react';
+import AuthPaneArt from '@/components/auth-pane-art';
+import type { AuthLayoutProps } from '@/types';
 
 export default function AuthSplitLayout({
     children,
@@ -22,7 +22,7 @@ export default function AuthSplitLayout({
                 </div>
             </div>
             <div className="w-full lg:p-8">
-                <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+                <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-87.5">
                     <div className="flex flex-col items-start gap-2 text-left sm:items-center sm:text-center">
                         <h1 className="text-[1.375rem] font-semibold">
                             {title}

@@ -92,6 +92,20 @@ test('admin can view the console page for any server', function () {
     get("/server/{$dependencies['server']->id}/console")->assertOk();
 });
 
+test('console page still renders when the primary allocation has been removed', function () {
+    $dependencies = serverConsoleDependencies();
+
+    Allocation::query()->findOrFail($dependencies['server']->allocation_id)->delete();
+
+    actingAs($dependencies['user']);
+
+    get("/server/{$dependencies['server']->id}/console")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('server.id', $dependencies['server']->id)
+            ->where('server.allocation', null));
+});
+
 test('other users cannot view the console page', function () {
     $dependencies = serverConsoleDependencies();
 

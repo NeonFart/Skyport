@@ -97,7 +97,7 @@ export function AnnouncementBanner() {
 
     return (
         <div className="mx-4 mt-4">
-            <div className="relative overflow-hidden rounded-xl border border-white/[0.08]">
+            <div className="relative overflow-hidden rounded-xl border gborder-white/[0.08]">
                 <div
                     className={cn(
                         'pointer-events-none absolute inset-0',

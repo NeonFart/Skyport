@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
+use Inertia\Testing\AssertableInertia;
+use Laravel\Fortify\Features;
+use PHPUnit\Framework\SkippedWithMessageException;
 use Tests\TestCase;
 
 /*
@@ -14,9 +18,7 @@ use Tests\TestCase;
 |
 */
 
-pest()->extend(TestCase::class)
-    ->use(RefreshDatabase::class)
-    ->in('Feature');
+pest()->extend(TestCase::class)->use(RefreshDatabase::class)->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
@@ -32,4 +34,23 @@ pest()->extend(TestCase::class)
 function something()
 {
     // ..
+}
+
+/**
+ * @param  Closure(AssertableInertia):void  $assert
+ */
+function assertInertiaPage(TestResponse $response, Closure $assert): TestResponse
+{
+    $assert(AssertableInertia::fromTestResponse($response));
+
+    return $response;
+}
+
+function skipUnlessFortifyFeature(string $feature): void
+{
+    if (! Features::enabled($feature)) {
+        throw new SkippedWithMessageException(
+            sprintf('The [%s] feature is not enabled.', $feature),
+        );
+    }
 }

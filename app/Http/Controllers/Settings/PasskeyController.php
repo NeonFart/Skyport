@@ -17,7 +17,11 @@ class PasskeyController extends Controller
     public function create(Request $request): JsonResponse
     {
         return response()->json(
-            $this->passkeyService->registrationOptions($request->user(), $request->session(), $request->getHost()),
+            $this->passkeyService->registrationOptions(
+                $request->user(),
+                $request->session(),
+                $request->getHost(),
+            ),
         );
     }
 
@@ -31,19 +35,25 @@ class PasskeyController extends Controller
             $request->getHost(),
         );
 
-        return response()->json([
-            'passkey' => [
-                'created_at' => $passkey->created_at?->toIso8601String(),
-                'id' => $passkey->id,
-                'last_used_at' => $passkey->last_used_at?->toIso8601String(),
-                'name' => $passkey->name,
+        return response()->json(
+            [
+                'passkey' => [
+                    'created_at' => $passkey->created_at?->toIso8601String(),
+                    'id' => $passkey->id,
+                    'last_used_at' => $passkey->last_used_at?->toIso8601String(),
+                    'name' => $passkey->name,
+                ],
             ],
-        ], Response::HTTP_CREATED);
+            Response::HTTP_CREATED,
+        );
     }
 
     public function destroy(Request $request, Passkey $passkey): Response
     {
-        abort_unless($passkey->user()->is($request->user()), Response::HTTP_NOT_FOUND);
+        abort_unless(
+            $passkey->user()->is($request->user()),
+            Response::HTTP_NOT_FOUND,
+        );
 
         $passkey->delete();
 

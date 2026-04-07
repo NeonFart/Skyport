@@ -4,9 +4,12 @@ namespace App\Providers;
 
 use App\Hashing\CompatibleArgon2IdHasher;
 use Carbon\CarbonImmutable;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -25,9 +28,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Hash::extend("argon2id", function ($app): CompatibleArgon2IdHasher {
+        Hash::extend('argon2id', function ($app): CompatibleArgon2IdHasher {
             return new CompatibleArgon2IdHasher(
-                $app["config"]->get("hashing.argon") ?? [],
+                $app['config']->get('hashing.argon') ?? [],
             );
         });
 
@@ -43,15 +46,24 @@ class AppServiceProvider extends ServiceProvider
 
         DB::prohibitDestructiveCommands(app()->isProduction());
 
+        RateLimiter::for('daemon', function (Request $request): Limit {
+            return Limit::perMinute(30)->by(
+                $request->bearerToken() ?: $request->ip(),
+            );
+        });
+
         Password::defaults(
-            fn(): ?Password => app()->isProduction()
-                ? Password::min(12)
+            function (): Password {
+                $rule = Password::min(12)
                     ->mixedCase()
                     ->letters()
                     ->numbers()
-                    ->symbols()
-                    ->uncompromised()
-                : null,
+                    ->symbols();
+
+                return app()->isProduction()
+                    ? $rule->uncompromised()
+                    : $rule;
+            },
         );
     }
 }

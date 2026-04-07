@@ -10,8 +10,8 @@ use App\Models\Cargo;
 use App\Models\Node;
 use App\Models\Server;
 use App\Models\User;
-use App\Services\ServerRemoteUpdateService;
 use App\Services\ServerPowerService;
+use App\Services\ServerRemoteUpdateService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -125,12 +125,14 @@ class ServersController extends Controller
             ->paginate(10)
             ->through(
                 fn (Server $server): array => [
-                    'allocation' => [
-                        'bind_ip' => $server->allocation->bind_ip,
-                        'id' => $server->allocation->id,
-                        'ip_alias' => $server->allocation->ip_alias,
-                        'port' => $server->allocation->port,
-                    ],
+                    'allocation' => $server->allocation
+                        ? [
+                            'bind_ip' => $server->allocation->bind_ip,
+                            'id' => $server->allocation->id,
+                            'ip_alias' => $server->allocation->ip_alias,
+                            'port' => $server->allocation->port,
+                        ]
+                        : null,
                     'cargo' => [
                         'id' => $server->cargo->id,
                         'name' => $server->cargo->name,

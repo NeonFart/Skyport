@@ -7,8 +7,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('daemon')
     ->name('daemon.')
+    ->middleware('throttle:daemon')
     ->group(function () {
-        Route::post('enroll', [ConfigurationController::class, 'store'])->name('enroll');
-        Route::post('heartbeat', [HeartbeatController::class, 'store'])->name('heartbeat');
-        Route::post('servers/{server}/runtime', [ServerRuntimeController::class, 'store'])->name('servers.runtime');
+        Route::post('enroll', [ConfigurationController::class, 'store'])->name(
+            'enroll',
+        );
+        Route::post('heartbeat', [HeartbeatController::class, 'store'])->name(
+            'heartbeat',
+        );
+        Route::post('servers/{server}/runtime', [
+            ServerRuntimeController::class,
+            'store',
+        ])->name('servers.runtime');
     });

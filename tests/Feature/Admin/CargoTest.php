@@ -13,47 +13,52 @@ use function Pest\Laravel\post;
 
 function pterodactylEggPayload(): string
 {
-    return json_encode([
-        '_comment' => 'Pterodactyl egg export',
-        'meta' => [
-            'version' => 'PTDL_v2',
-            'update_url' => null,
-        ],
-        'exported_at' => '2026-03-27T14:32:59+01:00',
-        'name' => 'Paper',
-        'author' => 'parker@pterodactyl.io',
-        'description' => 'High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.',
-        'features' => ['eula', 'java_version'],
-        'docker_images' => [
-            'Java 21' => 'ghcr.io/ptero-eggs/yolks:java_21',
-        ],
-        'file_denylist' => ['server.properties'],
-        'file_hidden_list' => ['.env'],
-        'startup' => 'java -jar {{SERVER_JARFILE}}',
-        'config' => [
-            'files' => '{}',
-            'startup' => '{"done":")! For help, type "}',
-            'logs' => '{}',
-            'stop' => 'stop',
-        ],
-        'scripts' => [
-            'installation' => [
-                'script' => '#!/bin/ash\necho installing',
-                'container' => 'ghcr.io/ptero-eggs/installers:alpine',
-                'entrypoint' => 'ash',
+    return json_encode(
+        [
+            '_comment' => 'Pterodactyl egg export',
+            'meta' => [
+                'version' => 'PTDL_v2',
+                'update_url' => null,
+            ],
+            'exported_at' => '2026-03-27T14:32:59+01:00',
+            'name' => 'Paper',
+            'author' => 'parker@pterodactyl.io',
+            'description' => 'High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.',
+            'features' => ['eula', 'java_version'],
+            'docker_images' => [
+                'Java 21' => 'ghcr.io/ptero-eggs/yolks:java_21',
+            ],
+            'file_denylist' => ['server.properties'],
+            'file_hidden_list' => ['.env'],
+            'startup' => 'java -jar {{SERVER_JARFILE}}',
+            'config' => [
+                'files' => '{}',
+                'startup' => '{"done":")! For help, type "}',
+                'logs' => '{}',
+                'stop' => 'stop',
+            ],
+            'scripts' => [
+                'installation' => [
+                    'script' => '#!/bin/ash\necho installing',
+                    'container' => 'ghcr.io/ptero-eggs/installers:alpine',
+                    'entrypoint' => 'ash',
+                ],
+            ],
+            'variables' => [
+                [
+                    'name' => 'Server Jar File',
+                    'description' => 'The name of the server jarfile to run.',
+                    'env_variable' => 'SERVER_JARFILE',
+                    'default_value' => 'server.jar',
+                    'user_viewable' => true,
+                    'user_editable' => true,
+                    'rules' => 'required|string',
+                    'field_type' => 'text',
+                ],
             ],
         ],
-        'variables' => [[
-            'name' => 'Server Jar File',
-            'description' => 'The name of the server jarfile to run.',
-            'env_variable' => 'SERVER_JARFILE',
-            'default_value' => 'server.jar',
-            'user_viewable' => true,
-            'user_editable' => true,
-            'rules' => 'required|string',
-            'field_type' => 'text',
-        ]],
-    ], JSON_THROW_ON_ERROR);
+        JSON_THROW_ON_ERROR,
+    );
 }
 
 test('non-admin cannot access admin cargo page', function () {
@@ -72,11 +77,13 @@ test('admin can access cargo page', function () {
 
     get('/admin/cargo')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('admin/cargo')
-            ->has('cargo.data', 1)
-            ->where('cargo.data.0.name', $cargo->name)
-            ->has('filters'));
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('admin/cargo')
+                ->has('cargo.data', 1)
+                ->where('cargo.data.0.name', $cargo->name)
+                ->has('filters'),
+        );
 });
 
 test('admin can search cargo', function () {
@@ -88,9 +95,11 @@ test('admin can search cargo', function () {
 
     get('/admin/cargo?search=Pap')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->has('cargo.data', 1)
-            ->where('cargo.data.0.name', 'Paper'));
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->has('cargo.data', 1)
+                ->where('cargo.data.0.name', 'Paper'),
+        );
 });
 
 test('admin cargo page paginates results', function () {
@@ -108,12 +117,14 @@ test('admin cargo page paginates results', function () {
 
     get('/admin/cargo?page=2')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('cargo.current_page', 2)
-            ->where('cargo.last_page', 2)
-            ->where('cargo.total', 11)
-            ->has('cargo.data', 1)
-            ->where('cargo.data.0.name', 'Cargo 1'));
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('cargo.current_page', 2)
+                ->where('cargo.last_page', 2)
+                ->where('cargo.total', 11)
+                ->has('cargo.data', 1)
+                ->where('cargo.data.0.name', 'Cargo 1'),
+        );
 });
 
 test('admin can create cargo', function () {
@@ -174,21 +185,23 @@ test('admin can update cargo from cargofile content', function () {
     $payload['file_hidden_list'] = ['.env'];
     $payload['config'] = [
         'files' => <<<'JSON'
-{
-    "server.properties": {
-        "parser": "properties",
-        "find": {
-            "server-ip": "0.0.0.0",
-            "server-port": "{{server.build.default.port}}"
+        {
+            "server.properties": {
+                "parser": "properties",
+                "find": {
+                    "server-ip": "0.0.0.0",
+                    "server-port": "{{server.build.default.port}}"
+                }
+            }
         }
-    }
-}
-JSON,
+        JSON
+        ,
         'startup' => <<<'JSON'
-{
-    "done": ")! For help, type "
-}
-JSON,
+        {
+            "done": ")! For help, type "
+        }
+        JSON
+        ,
         'logs' => '{}',
         'stop' => 'stop',
     ];

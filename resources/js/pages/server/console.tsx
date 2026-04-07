@@ -1,6 +1,11 @@
-import { Head } from "@inertiajs/react";
-import { AlertCircle, ChevronRight, Play, RotateCw, Square, X } from "lucide-react";
-import { Area, AreaChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
+import { Head } from '@inertiajs/react';
+import { AlertCircle, Play, RotateCw, Square, X } from 'lucide-react';
+import {
+    Area,
+    AreaChart,
+    ResponsiveContainer,
+    Tooltip as RechartsTooltip,
+} from 'recharts';
 import {
     type ComponentType,
     type FormEvent,
@@ -10,10 +15,12 @@ import {
     useMemo,
     useRef,
     useState,
-} from "react";
-import { show as serverConsole } from "@/actions/App/Http/Controllers/Client/ServerConsoleController";
-import { store as powerServer } from "@/actions/App/Http/Controllers/Client/ServerPowerController";
-import { show as websocketCredentials } from "@/actions/App/Http/Controllers/Client/ServerWebsocketController";
+} from 'react';
+import {
+    console as serverConsole,
+    power as powerServer,
+    websocket as websocketCredentials,
+} from '@/routes/client/servers';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,31 +30,31 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import CargoIcon from "@/components/cargo-icon";
-import NetworkingIcon from "@/components/networking-icon";
-import ServerNodeIcon from "@/components/server-node-icon";
-import { Button } from "@/components/ui/button";
-import { PlaceholderPattern } from "@/components/ui/placeholder-pattern";
-import { Spinner } from "@/components/ui/spinner";
-import { toast } from "@/components/ui/sonner";
+} from '@/components/ui/alert-dialog';
+import CargoIcon from '@/components/cargo-icon';
+import NetworkingIcon from '@/components/networking-icon';
+import ServerNodeIcon from '@/components/server-node-icon';
+import { Button } from '@/components/ui/button';
+import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { Spinner } from '@/components/ui/spinner';
+import { toast } from '@/components/ui/sonner';
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
-import AppLayout from "@/layouts/app-layout";
+} from '@/components/ui/tooltip';
+import AppLayout from '@/layouts/app-layout';
 import {
     formatServerAddress,
     powerActionsForState,
     statusLabel,
-} from "@/lib/server-runtime";
-import { cn } from "@/lib/utils";
-import { home } from "@/routes";
-import type { BreadcrumbItem } from "@/types";
+} from '@/lib/server-runtime';
+import { cn } from '@/lib/utils';
+import { home } from '@/routes';
+import type { BreadcrumbItem } from '@/types';
 
-type ServerPowerSignal = "kill" | "restart" | "start" | "stop";
-type ConfirmedSignal = "kill";
+type ServerPowerSignal = 'kill' | 'restart' | 'start' | 'stop';
+type ConfirmedSignal = 'kill';
 
 type Props = {
     server: {
@@ -70,7 +77,7 @@ type Props = {
             bind_ip: string;
             ip_alias: string | null;
             port: number;
-        };
+        } | null;
     };
 };
 
@@ -82,7 +89,7 @@ type WebsocketCredentials = {
     };
 };
 
-type ConsoleLineTone = "default" | "error" | "input" | "system";
+type ConsoleLineTone = 'default' | 'error' | 'input' | 'system';
 
 type ConsoleLine = {
     id: number;
@@ -118,31 +125,37 @@ type ResourceHistoryPoint = {
 
 const MAX_CONSOLE_LINES = 50;
 const MAX_RESOURCE_HISTORY_POINTS = 20;
-const PRIMARY_CHART_COLOR = "#d92400";
-const ANSI_ESCAPE_PATTERN =
-    // eslint-disable-next-line no-control-regex
-    /\u001B\[[0-?]*[ -/]*[@-~]/g;
+const PRIMARY_CHART_COLOR = '#d92400';
+const ANSI_ESCAPE_PATTERN = new RegExp(
+    String.raw`\u001B\[[0-?]*[ -/]*[@-~]`,
+    'g',
+);
+const ANSI_SGR_SEGMENT_PATTERN = new RegExp(
+    String.raw`(\u001B\[[0-9;]*m)`,
+    'g',
+);
+const ANSI_SGR_PATTERN = new RegExp(String.raw`^\u001B\[([0-9;]*)m$`);
 
 function csrfToken(): string {
     return (
         document
             .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content") ?? ""
+            ?.getAttribute('content') ?? ''
     );
 }
 
 async function fetchWebsocketToken(
     serverId: number,
-): Promise<WebsocketCredentials["data"]> {
+): Promise<WebsocketCredentials['data']> {
     const response = await fetch(websocketCredentials.url(serverId), {
         headers: {
-            Accept: "application/json",
-            "X-Requested-With": "XMLHttpRequest",
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
         },
     });
 
     if (!response.ok) {
-        throw new Error("Failed to fetch websocket credentials.");
+        throw new Error('Failed to fetch websocket credentials.');
     }
 
     const payload = (await response.json()) as WebsocketCredentials;
@@ -151,23 +164,23 @@ async function fetchWebsocketToken(
 }
 
 function formatPercent(value: number): string {
-    return `${value.toFixed(1).replace(/\.0$/, "")}%`;
+    return `${value.toFixed(1).replace(/\.0$/, '')}%`;
 }
 
 function formatMib(value: number): string {
     if (value >= 1024) {
-        return `${(value / 1024).toFixed(value >= 10240 ? 0 : 1).replace(/\.0$/, "")} GiB`;
+        return `${(value / 1024).toFixed(value >= 10240 ? 0 : 1).replace(/\.0$/, '')} GiB`;
     }
 
     if (value >= 10) {
         return `${Math.round(value)} MiB`;
     }
 
-    return `${value.toFixed(1).replace(/\.0$/, "")} MiB`;
+    return `${value.toFixed(1).replace(/\.0$/, '')} MiB`;
 }
 
 function parsePercent(value: string | undefined): number {
-    const parsed = Number.parseFloat((value ?? "0").replace("%", ""));
+    const parsed = Number.parseFloat((value ?? '0').replace('%', ''));
 
     if (!Number.isFinite(parsed) || parsed < 0) {
         return 0;
@@ -178,19 +191,19 @@ function parsePercent(value: string | undefined): number {
 
 function sizeUnitToMib(unit: string): number {
     switch (unit.toUpperCase()) {
-        case "B":
+        case 'B':
             return 1 / (1024 * 1024);
-        case "KIB":
-        case "KB":
+        case 'KIB':
+        case 'KB':
             return 1 / 1024;
-        case "MIB":
-        case "MB":
+        case 'MIB':
+        case 'MB':
             return 1;
-        case "GIB":
-        case "GB":
+        case 'GIB':
+        case 'GB':
             return 1024;
-        case "TIB":
-        case "TB":
+        case 'TIB':
+        case 'TB':
             return 1024 * 1024;
         default:
             return 0;
@@ -204,17 +217,17 @@ function parseSizeToMib(value: string | undefined): number {
         return 0;
     }
 
-    const amount = Number.parseFloat(match[1] ?? "0");
+    const amount = Number.parseFloat(match[1] ?? '0');
 
     if (!Number.isFinite(amount) || amount < 0) {
         return 0;
     }
 
-    return amount * sizeUnitToMib(match[2] ?? "MiB");
+    return amount * sizeUnitToMib(match[2] ?? 'MiB');
 }
 
 function parseMemoryUsageToMib(value: string | undefined): number {
-    return parseSizeToMib(value?.split("/")[0]?.trim());
+    return parseSizeToMib(value?.split('/')[0]?.trim());
 }
 
 function bytesToMib(bytes: number | undefined): number {
@@ -244,11 +257,13 @@ function buildRuntimeUsage(
               };
           }
         | undefined,
-    server: Props["server"],
+    server: Props['server'],
 ): ResourceUsage {
     const running = Boolean(snapshot?.running);
     const cpuPercent = running ? parsePercent(snapshot?.stats?.CPUPerc) : 0;
-    const memoryMib = running ? parseMemoryUsageToMib(snapshot?.stats?.MemUsage) : 0;
+    const memoryMib = running
+        ? parseMemoryUsageToMib(snapshot?.stats?.MemUsage)
+        : 0;
     const diskMib = bytesToMib(snapshot?.disk_bytes);
 
     return {
@@ -263,81 +278,77 @@ function buildRuntimeUsage(
 
 function resourceHistoryTime(): string {
     return new Intl.DateTimeFormat(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
     }).format(new Date());
 }
 
 function statusDotTone(status: string): string {
     switch (status) {
-        case "running":
-            return "bg-emerald-500 ring-emerald-500/25";
-        case "starting":
-        case "installing":
-        case "stopping":
-        case "restarting":
-            return "bg-amber-500 ring-amber-500/25";
-        case "install_failed":
-            return "bg-[#d92400] ring-[#d92400]/20";
-        case "pending":
-            return "bg-sky-500 ring-sky-500/25";
+        case 'running':
+            return 'bg-emerald-500 ring-emerald-500/25';
+        case 'starting':
+        case 'installing':
+        case 'stopping':
+        case 'restarting':
+            return 'bg-amber-500 ring-amber-500/25';
+        case 'install_failed':
+            return 'bg-[#d92400] ring-[#d92400]/20';
+        case 'pending':
+            return 'bg-sky-500 ring-sky-500/25';
         default:
-            return "bg-muted-foreground/55 ring-muted-foreground/15";
+            return 'bg-muted-foreground/55 ring-muted-foreground/15';
     }
-}
-
-function consoleConnectionTone(isConnected: boolean): string {
-    return isConnected ? "bg-emerald-400" : "bg-amber-400";
 }
 
 function stripAnsi(text: string): string {
-    return text.replaceAll(ANSI_ESCAPE_PATTERN, "");
+    return text.replaceAll(ANSI_ESCAPE_PATTERN, '');
 }
 
 function splitConsoleLines(text: string): string[] {
-    const normalized = text.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
-    const lines = normalized.split("\n");
+    const normalized = text.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    const lines = normalized.split('\n');
 
-    if (lines.at(-1) === "") {
+    if (lines.at(-1) === '') {
         lines.pop();
     }
 
-    return lines.length > 0 ? lines : [""];
+    return lines.length > 0 ? lines : [''];
 }
 
 function ansiClassName(codes: number[]): string {
     const classNames = new Set<string>();
 
     if (codes.includes(1)) {
-        classNames.add("font-semibold");
+        classNames.add('font-semibold');
     }
 
     if (codes.includes(31) || codes.includes(91)) {
-        classNames.add("text-rose-400");
+        classNames.add('text-rose-400');
     } else if (codes.includes(32) || codes.includes(92)) {
-        classNames.add("text-emerald-400");
+        classNames.add('text-emerald-400');
     } else if (codes.includes(33) || codes.includes(93)) {
-        classNames.add("text-amber-300");
+        classNames.add('text-amber-300');
     } else if (codes.includes(34) || codes.includes(94)) {
-        classNames.add("text-sky-400");
+        classNames.add('text-sky-400');
     } else if (codes.includes(35) || codes.includes(95)) {
-        classNames.add("text-fuchsia-400");
+        classNames.add('text-fuchsia-400');
     } else if (codes.includes(36) || codes.includes(96)) {
-        classNames.add("text-cyan-300");
+        classNames.add('text-cyan-300');
     } else if (codes.includes(37) || codes.includes(97)) {
-        classNames.add("text-slate-100");
+        classNames.add('text-slate-100');
     } else if (codes.includes(90)) {
-        classNames.add("text-slate-400");
+        classNames.add('text-slate-400');
     } else {
-        classNames.add("text-foreground dark:text-slate-200");
+        classNames.add('text-foreground dark:text-slate-200');
     }
 
-    return [...classNames].join(" ");
+    return [...classNames].join(' ');
 }
 
 function ansiSegments(text: string): AnsiSegment[] {
-    const parts = text.split(/(\u001b\[[0-9;]*m)/g);
+    const parts = text.split(ANSI_SGR_SEGMENT_PATTERN);
     let activeCodes: number[] = [];
     const segments: AnsiSegment[] = [];
 
@@ -346,11 +357,11 @@ function ansiSegments(text: string): AnsiSegment[] {
             continue;
         }
 
-        const match = part.match(/^\u001b\[([0-9;]*)m$/);
+        const match = part.match(ANSI_SGR_PATTERN);
 
         if (match) {
-            const codes = (match[1] || "0")
-                .split(";")
+            const codes = (match[1] || '0')
+                .split(';')
                 .filter((value) => value.length > 0)
                 .map((value) => Number.parseInt(value, 10))
                 .filter((value) => !Number.isNaN(value));
@@ -367,12 +378,18 @@ function ansiSegments(text: string): AnsiSegment[] {
 
     return segments.length > 0
         ? segments
-        : [{ className: "text-foreground dark:text-slate-200", text: stripAnsi(text) }];
+        : [
+              {
+                  className: 'text-foreground dark:text-slate-200',
+                  text: stripAnsi(text),
+              },
+          ];
 }
 
 function ConsoleLineText({ text }: { text: string }) {
     const segments = ansiSegments(text);
     const plainText = stripAnsi(text);
+    let segmentOffset = 0;
 
     if (plainText.length === 0) {
         return <span> </span>;
@@ -380,25 +397,30 @@ function ConsoleLineText({ text }: { text: string }) {
 
     return (
         <>
-            {segments.map((segment, index) => (
-                <span key={`${segment.text}-${index}`} className={segment.className}>
-                    {segment.text}
-                </span>
-            ))}
+            {segments.map((segment) => {
+                const key = `${segmentOffset}-${segment.className}-${segment.text}`;
+                segmentOffset += segment.text.length;
+
+                return (
+                    <span key={key} className={segment.className}>
+                        {segment.text}
+                    </span>
+                );
+            })}
         </>
     );
 }
 
 function consoleLineClasses(tone: ConsoleLineTone): string {
     switch (tone) {
-        case "error":
-            return "text-rose-600 dark:text-rose-400";
-        case "system":
-            return "text-muted-foreground";
-        case "input":
-            return "text-foreground dark:text-slate-200";
+        case 'error':
+            return 'text-rose-600 dark:text-rose-400';
+        case 'system':
+            return 'text-muted-foreground';
+        case 'input':
+            return 'text-foreground dark:text-slate-200';
         default:
-            return "text-foreground dark:text-slate-200";
+            return 'text-foreground dark:text-slate-200';
     }
 }
 
@@ -406,12 +428,12 @@ function ConsoleRenderedLine({ line }: { line: ConsoleLine }) {
     return (
         <div
             className={cn(
-                "break-words whitespace-pre-wrap",
+                'wrap-break-word whitespace-pre-wrap',
                 consoleLineClasses(line.tone),
             )}
         >
-            {line.tone === "system" ? "[Skyport Daemon]: " : null}
-            {line.tone === "input" ? "> " : null}
+            {line.tone === 'system' ? '[Skyport Daemon]: ' : null}
+            {line.tone === 'input' ? '> ' : null}
             <ConsoleLineText text={line.text} />
         </div>
     );
@@ -430,8 +452,7 @@ function ServerStatusDot({ status }: { status: string }) {
                 >
                     <span
                         className={`relative flex h-2 w-2 items-center justify-center rounded-full ring-4 ${statusDotTone(status)}`}
-                    >
-                    </span>
+                    ></span>
                 </button>
             </TooltipTrigger>
             <TooltipContent>
@@ -502,15 +523,15 @@ function ResourceUsageCard({
     usageLabel,
 }: {
     data: ResourceHistoryPoint[];
-    dataKey: "cpu" | "disk" | "memory";
+    dataKey: 'cpu' | 'disk' | 'memory';
     title: string;
     usage: string;
     usageLabel: string;
 }) {
     return (
         <div className="relative flex h-full flex-col gap-1 rounded-md bg-sidebar p-1">
-            <div className="relative flex aspect-[16/7] flex-col justify-between overflow-hidden rounded-md border border-sidebar-accent bg-background p-4">
-                <div className="absolute inset-x-0 bottom-0 z-10 h-1/3 bg-gradient-to-t from-background to-transparent" />
+            <div className="relative flex aspect-16/7 flex-col justify-between overflow-hidden rounded-md border border-sidebar-accent bg-background p-4">
+                <div className="absolute inset-x-0 bottom-0 z-10 h-1/3 bg-linear-to-t from-background to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 h-2/4">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
@@ -546,7 +567,7 @@ function ResourceUsageCard({
                                 content={<ResourceChartTooltip />}
                                 cursor={{
                                     stroke: PRIMARY_CHART_COLOR,
-                                    strokeDasharray: "4 4",
+                                    strokeDasharray: '4 4',
                                     strokeWidth: 1,
                                 }}
                             />
@@ -595,8 +616,8 @@ export default function ServerConsole({ server }: Props) {
         useState<ConfirmedSignal | null>(null);
     const [socketConnected, setSocketConnected] = useState(false);
     const [consolePhase, setConsolePhase] = useState<
-        "connecting" | "requesting-logs" | "ready"
-    >("connecting");
+        'connecting' | 'requesting-logs' | 'ready'
+    >('connecting');
     const [, setSocketError] = useState<string | null>(null);
     const [consoleLines, setConsoleLines] = useState<ConsoleLine[]>([]);
     const [runtimeUsage, setRuntimeUsage] = useState<ResourceUsage>({
@@ -605,12 +626,14 @@ export default function ServerConsole({ server }: Props) {
         diskPercent: 0,
         memoryMib: 0,
         memoryPercent: 0,
-        running: server.status === "running",
+        running: server.status === 'running',
     });
-    const [resourceHistory, setResourceHistory] = useState<ResourceHistoryPoint[]>([]);
-    const [command, setCommand] = useState("");
+    const [resourceHistory, setResourceHistory] = useState<
+        ResourceHistoryPoint[]
+    >([]);
+    const [command, setCommand] = useState('');
     const [commandHistory, setCommandHistory] = useState<string[]>(() => {
-        if (typeof window === "undefined") {
+        if (typeof window === 'undefined') {
             return [];
         }
 
@@ -635,18 +658,18 @@ export default function ServerConsole({ server }: Props) {
 
     const effectiveState = useMemo(() => {
         if (
-            submittingAction === "start" &&
-            (runtimeState === "offline" || runtimeState === "install_failed")
+            submittingAction === 'start' &&
+            (runtimeState === 'offline' || runtimeState === 'install_failed')
         ) {
-            return "starting";
+            return 'starting';
         }
 
-        if (submittingAction === "stop") {
-            return "stopping";
+        if (submittingAction === 'stop') {
+            return 'stopping';
         }
 
-        if (submittingAction === "restart") {
-            return "restarting";
+        if (submittingAction === 'restart') {
+            return 'restarting';
         }
 
         return runtimeState;
@@ -654,11 +677,11 @@ export default function ServerConsole({ server }: Props) {
 
     const availability = powerActionsForState(effectiveState);
     const showKillInStopSlot =
-        (effectiveState === "starting" || effectiveState === "stopping") &&
+        (effectiveState === 'starting' || effectiveState === 'stopping') &&
         availability.kill;
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: "Home",
+            title: 'Home',
             href: home(),
         },
         {
@@ -666,7 +689,7 @@ export default function ServerConsole({ server }: Props) {
             href: serverConsole(server.id),
         },
         {
-            title: "Console",
+            title: 'Console',
             href: serverConsole(server.id),
         },
     ];
@@ -678,7 +701,7 @@ export default function ServerConsole({ server }: Props) {
                       cpu: runtimeUsage.cpuPercent,
                       disk: runtimeUsage.diskPercent,
                       memory: runtimeUsage.memoryPercent,
-                      time: "Now",
+                      time: 'Now',
                   },
               ];
     const cpuUsageLabel =
@@ -689,7 +712,7 @@ export default function ServerConsole({ server }: Props) {
     const diskUsageLabel = `${formatMib(runtimeUsage.diskMib)} / ${formatMib(server.disk_mib)}`;
 
     const appendConsoleLine = useCallback(
-        (text: string, tone: ConsoleLineTone = "default") => {
+        (text: string, tone: ConsoleLineTone = 'default') => {
             const nextLines = splitConsoleLines(text);
 
             setConsoleLines((currentLines) => {
@@ -713,23 +736,30 @@ export default function ServerConsole({ server }: Props) {
             consolePhaseTimeoutRef.current = null;
         }
 
-        setConsolePhase("ready");
+        setConsolePhase('ready');
     }, []);
 
     const requestSocketSync = useCallback(() => {
-        if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+        if (
+            !socketRef.current ||
+            socketRef.current.readyState !== WebSocket.OPEN
+        ) {
             return;
         }
 
-        socketRef.current.send(JSON.stringify({ event: "send stats", args: [] }));
-        socketRef.current.send(JSON.stringify({ event: "send logs", args: [] }));
+        socketRef.current.send(
+            JSON.stringify({ event: 'send stats', args: [] }),
+        );
+        socketRef.current.send(
+            JSON.stringify({ event: 'send logs', args: [] }),
+        );
     }, []);
 
     const updateRuntimeState = useCallback((nextState: string) => {
         if (
-            (submittingActionRef.current === "stop" ||
-                submittingActionRef.current === "restart") &&
-            nextState === "running"
+            (submittingActionRef.current === 'stop' ||
+                submittingActionRef.current === 'restart') &&
+            nextState === 'running'
         ) {
             return;
         }
@@ -742,7 +772,7 @@ export default function ServerConsole({ server }: Props) {
     const handleSocketPayload = useCallback(
         (payload: SocketPayload) => {
             switch (payload.event) {
-                case "auth success": {
+                case 'auth success': {
                     setSocketConnected(true);
                     setSocketError(null);
                     nextConsoleLineIdRef.current = 0;
@@ -756,7 +786,7 @@ export default function ServerConsole({ server }: Props) {
                         memoryPercent: 0,
                         running: false,
                     });
-                    setConsolePhase("requesting-logs");
+                    setConsolePhase('requesting-logs');
                     requestSocketSync();
 
                     if (consolePhaseTimeoutRef.current) {
@@ -764,26 +794,29 @@ export default function ServerConsole({ server }: Props) {
                     }
 
                     consolePhaseTimeoutRef.current = window.setTimeout(() => {
-                        setConsolePhase("ready");
+                        setConsolePhase('ready');
                         consolePhaseTimeoutRef.current = null;
                     }, 1200);
 
                     return;
                 }
-                case "auth error":
-                case "jwt error": {
+                case 'auth error':
+                case 'jwt error': {
                     setSocketConnected(false);
-                    setConsolePhase("connecting");
-                    setSocketError("Console authentication failed.");
-                    appendConsoleLine("Console authentication failed.", "error");
+                    setConsolePhase('connecting');
+                    setSocketError('Console authentication failed.');
+                    appendConsoleLine(
+                        'Console authentication failed.',
+                        'error',
+                    );
                     return;
                 }
-                case "status": {
-                    const nextState = String(payload.args?.[0] ?? "offline");
+                case 'status': {
+                    const nextState = String(payload.args?.[0] ?? 'offline');
                     updateRuntimeState(nextState);
                     return;
                 }
-                case "stats": {
+                case 'stats': {
                     const snapshot = payload.args?.[0] as
                         | {
                               disk_bytes?: number;
@@ -799,38 +832,43 @@ export default function ServerConsole({ server }: Props) {
                     const nextUsage = buildRuntimeUsage(snapshot, server);
 
                     setRuntimeUsage(nextUsage);
-                    setResourceHistory((currentHistory) => [
-                        ...currentHistory,
-                        {
-                            cpu: nextUsage.cpuPercent,
-                            disk: nextUsage.diskPercent,
-                            memory: nextUsage.memoryPercent,
-                            time: resourceHistoryTime(),
-                        },
-                    ].slice(-MAX_RESOURCE_HISTORY_POINTS));
-                    updateRuntimeState(String(snapshot?.state ?? "offline"));
+                    setResourceHistory((currentHistory) =>
+                        [
+                            ...currentHistory,
+                            {
+                                cpu: nextUsage.cpuPercent,
+                                disk: nextUsage.diskPercent,
+                                memory: nextUsage.memoryPercent,
+                                time: resourceHistoryTime(),
+                            },
+                        ].slice(-MAX_RESOURCE_HISTORY_POINTS),
+                    );
+                    updateRuntimeState(String(snapshot?.state ?? 'offline'));
                     return;
                 }
-                case "console output":
-                case "install output":
-                case "transfer logs": {
+                case 'console output':
+                case 'install output':
+                case 'transfer logs': {
                     finishConsoleLoading();
-                    appendConsoleLine(String(payload.args?.[0] ?? ""));
+                    appendConsoleLine(String(payload.args?.[0] ?? ''));
                     return;
                 }
-                case "daemon message": {
+                case 'daemon message': {
                     finishConsoleLoading();
-                    appendConsoleLine(String(payload.args?.[0] ?? ""), "system");
+                    appendConsoleLine(
+                        String(payload.args?.[0] ?? ''),
+                        'system',
+                    );
                     return;
                 }
-                case "daemon error": {
+                case 'daemon error': {
                     finishConsoleLoading();
-                    appendConsoleLine(String(payload.args?.[0] ?? ""), "error");
+                    appendConsoleLine(String(payload.args?.[0] ?? ''), 'error');
                     return;
                 }
-                case "transfer status": {
-                    if (String(payload.args?.[0] ?? "") === "failure") {
-                        appendConsoleLine("Transfer has failed.", "error");
+                case 'transfer status': {
+                    if (String(payload.args?.[0] ?? '') === 'failure') {
+                        appendConsoleLine('Transfer has failed.', 'error');
                     }
 
                     return;
@@ -862,7 +900,7 @@ export default function ServerConsole({ server }: Props) {
         }
 
         setSocketConnected(false);
-        setConsolePhase("connecting");
+        setConsolePhase('connecting');
         setSocketError(null);
 
         try {
@@ -871,27 +909,30 @@ export default function ServerConsole({ server }: Props) {
 
             socketRef.current = socket;
 
-            socket.addEventListener("open", () => {
+            socket.addEventListener('open', () => {
                 socket.send(
                     JSON.stringify({
-                        event: "auth",
+                        event: 'auth',
                         args: [credentials.token],
                     }),
                 );
             });
 
-            socket.addEventListener("message", (event) => {
+            socket.addEventListener('message', (event) => {
                 try {
                     const payload = JSON.parse(event.data) as SocketPayload;
                     handleSocketPayload(payload);
                 } catch {
-                    appendConsoleLine("Received an unreadable console payload.", "error");
+                    appendConsoleLine(
+                        'Received an unreadable console payload.',
+                        'error',
+                    );
                 }
             });
 
-            socket.addEventListener("close", () => {
+            socket.addEventListener('close', () => {
                 setSocketConnected(false);
-                setConsolePhase("connecting");
+                setConsolePhase('connecting');
                 socketRef.current = null;
 
                 if (skipNextCloseRef.current) {
@@ -907,15 +948,15 @@ export default function ServerConsole({ server }: Props) {
                 }
             });
 
-            socket.addEventListener("error", () => {
+            socket.addEventListener('error', () => {
                 setSocketConnected(false);
-                setConsolePhase("connecting");
-                setSocketError("Console connection lost. Reconnecting…");
+                setConsolePhase('connecting');
+                setSocketError('Console connection lost. Reconnecting…');
             });
         } catch {
             setSocketConnected(false);
-            setConsolePhase("connecting");
-            setSocketError("Console connection failed. Reconnecting…");
+            setConsolePhase('connecting');
+            setSocketError('Console connection failed. Reconnecting…');
 
             if (!reconnectTimeout.current) {
                 reconnectTimeout.current = window.setTimeout(() => {
@@ -931,7 +972,7 @@ export default function ServerConsole({ server }: Props) {
     }, [submittingAction]);
 
     useEffect(() => {
-        if (typeof window === "undefined") {
+        if (typeof window === 'undefined') {
             return;
         }
 
@@ -963,7 +1004,10 @@ export default function ServerConsole({ server }: Props) {
         };
     }, [connect]);
 
+    const consoleLineCount = consoleLines.length;
+
     useEffect(() => {
+        void consoleLineCount;
         const viewport = consoleViewportRef.current;
 
         if (!viewport) {
@@ -971,7 +1015,7 @@ export default function ServerConsole({ server }: Props) {
         }
 
         viewport.scrollTop = viewport.scrollHeight;
-    }, [consoleLines]);
+    }, [consoleLineCount]);
 
     const sendPowerSignal = async (signal: ServerPowerSignal) => {
         setSubmittingAction(signal);
@@ -979,12 +1023,12 @@ export default function ServerConsole({ server }: Props) {
 
         try {
             const response = await fetch(powerServer.url(server.id), {
-                method: "POST",
+                method: 'POST',
                 headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": csrfToken(),
-                    "X-Requested-With": "XMLHttpRequest",
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: JSON.stringify({ signal }),
             });
@@ -995,16 +1039,16 @@ export default function ServerConsole({ server }: Props) {
 
             if (!response.ok) {
                 throw new Error(
-                    payload?.message || "The power action could not be sent.",
+                    payload?.message || 'The power action could not be sent.',
                 );
             }
 
-            if (signal === "start") {
-                setRuntimeState("starting");
-            } else if (signal === "stop") {
-                setRuntimeState("offline");
-            } else if (signal === "restart") {
-                setRuntimeState("starting");
+            if (signal === 'start') {
+                setRuntimeState('starting');
+            } else if (signal === 'stop') {
+                setRuntimeState('offline');
+            } else if (signal === 'restart') {
+                setRuntimeState('starting');
             }
 
             toast.success(`${statusActionLabel(signal)} signal sent.`);
@@ -1012,7 +1056,7 @@ export default function ServerConsole({ server }: Props) {
             const message =
                 error instanceof Error
                     ? error.message
-                    : "The power action could not be sent.";
+                    : 'The power action could not be sent.';
 
             setActionError(message);
             setSubmittingAction(null);
@@ -1033,18 +1077,20 @@ export default function ServerConsole({ server }: Props) {
 
         socketRef.current.send(
             JSON.stringify({
-                event: "send command",
+                event: 'send command',
                 args: [trimmedCommand],
             }),
         );
 
-        appendConsoleLine(trimmedCommand, "input");
-        setCommandHistory((currentHistory) => [
-            trimmedCommand,
-            ...currentHistory.filter((entry) => entry !== trimmedCommand),
-        ].slice(0, 32));
+        appendConsoleLine(trimmedCommand, 'input');
+        setCommandHistory((currentHistory) =>
+            [
+                trimmedCommand,
+                ...currentHistory.filter((entry) => entry !== trimmedCommand),
+            ].slice(0, 32),
+        );
         setHistoryIndex(-1);
-        setCommand("");
+        setCommand('');
     };
 
     const handleCommandSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -1073,7 +1119,7 @@ export default function ServerConsole({ server }: Props) {
                                     !availability.start ||
                                     submittingAction !== null
                                 }
-                                onClick={() => void sendPowerSignal("start")}
+                                onClick={() => void sendPowerSignal('start')}
                             >
                                 <Play />
                                 Start
@@ -1084,7 +1130,7 @@ export default function ServerConsole({ server }: Props) {
                                     !availability.restart ||
                                     submittingAction !== null
                                 }
-                                onClick={() => void sendPowerSignal("restart")}
+                                onClick={() => void sendPowerSignal('restart')}
                             >
                                 <RotateCw />
                                 Restart
@@ -1093,7 +1139,7 @@ export default function ServerConsole({ server }: Props) {
                                 <Button
                                     variant="secondary"
                                     disabled={submittingAction !== null}
-                                    onClick={() => setConfirmingSignal("kill")}
+                                    onClick={() => setConfirmingSignal('kill')}
                                 >
                                     <X />
                                     Kill
@@ -1105,7 +1151,7 @@ export default function ServerConsole({ server }: Props) {
                                         !availability.stop ||
                                         submittingAction !== null
                                     }
-                                    onClick={() => void sendPowerSignal("stop")}
+                                    onClick={() => void sendPowerSignal('stop')}
                                 >
                                     <Square />
                                     Stop
@@ -1152,12 +1198,13 @@ export default function ServerConsole({ server }: Props) {
                 <section className="overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm">
                     <div
                         ref={consoleViewportRef}
-                        className="relative h-[26rem] overflow-y-auto bg-muted/25 px-4 py-4 font-mono text-[13px] leading-6"
+                        className="relative h-104 overflow-y-auto bg-muted/25 px-4 py-4 font-mono text-[13px] leading-6"
                     >
                         <div
                             className={cn(
-                                "transition-[filter,opacity] duration-200",
-                                consolePhase !== "ready" && "pointer-events-none blur-[2px] opacity-60",
+                                'transition-[filter,opacity] duration-200',
+                                consolePhase !== 'ready' &&
+                                    'pointer-events-none blur-[2px] opacity-60',
                             )}
                         >
                             {consoleLines.length === 0 ? (
@@ -1167,26 +1214,29 @@ export default function ServerConsole({ server }: Props) {
                             ) : (
                                 <div className="space-y-1">
                                     {consoleLines.map((line) => (
-                                        <ConsoleRenderedLine key={line.id} line={line} />
+                                        <ConsoleRenderedLine
+                                            key={line.id}
+                                            line={line}
+                                        />
                                     ))}
                                 </div>
                             )}
                         </div>
 
-                        {consolePhase !== "ready" ? (
+                        {consolePhase !== 'ready' ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-background/35 px-6">
                                 <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/95 px-4 py-3 shadow-sm backdrop-blur-sm">
                                     <Spinner className="size-4 text-muted-foreground" />
                                     <div className="space-y-0.5 text-sm">
                                         <p className="font-medium text-foreground">
-                                            {consolePhase === "connecting"
-                                                ? "Connecting..."
-                                                : "Requesting console logs..."}
+                                            {consolePhase === 'connecting'
+                                                ? 'Connecting...'
+                                                : 'Requesting console logs...'}
                                         </p>
                                         <p className="text-muted-foreground">
-                                            {consolePhase === "connecting"
-                                                ? "Opening the websocket connection."
-                                                : "Loading recent console output."}
+                                            {consolePhase === 'connecting'
+                                                ? 'Opening the websocket connection.'
+                                                : 'Loading recent console output.'}
                                         </p>
                                     </div>
                                 </div>
@@ -1203,9 +1253,11 @@ export default function ServerConsole({ server }: Props) {
                             <div className="flex items-center gap-3 rounded-lg bg-transparent px-3">
                                 <input
                                     value={command}
-                                    onChange={(event) => setCommand(event.target.value)}
+                                    onChange={(event) =>
+                                        setCommand(event.target.value)
+                                    }
                                     onKeyDown={(event) => {
-                                        if (event.key === "ArrowUp") {
+                                        if (event.key === 'ArrowUp') {
                                             const nextIndex = Math.min(
                                                 historyIndex + 1,
                                                 commandHistory.length - 1,
@@ -1213,13 +1265,16 @@ export default function ServerConsole({ server }: Props) {
 
                                             if (nextIndex >= 0) {
                                                 setHistoryIndex(nextIndex);
-                                                setCommand(commandHistory[nextIndex] ?? "");
+                                                setCommand(
+                                                    commandHistory[nextIndex] ??
+                                                        '',
+                                                );
                                             }
 
                                             event.preventDefault();
                                         }
 
-                                        if (event.key === "ArrowDown") {
+                                        if (event.key === 'ArrowDown') {
                                             const nextIndex = Math.max(
                                                 historyIndex - 1,
                                                 -1,
@@ -1228,17 +1283,23 @@ export default function ServerConsole({ server }: Props) {
                                             setHistoryIndex(nextIndex);
                                             setCommand(
                                                 nextIndex >= 0
-                                                    ? (commandHistory[nextIndex] ?? "")
-                                                    : "",
+                                                    ? (commandHistory[
+                                                          nextIndex
+                                                      ] ?? '')
+                                                    : '',
                                             );
                                             event.preventDefault();
                                         }
                                     }}
-                                    disabled={!socketConnected || consolePhase !== "ready"}
+                                    disabled={
+                                        !socketConnected ||
+                                        consolePhase !== 'ready'
+                                    }
                                     placeholder={
-                                        socketConnected && consolePhase === "ready"
-                                            ? "Type a command and press enter…"
-                                            : "Console is reconnecting…"
+                                        socketConnected &&
+                                        consolePhase === 'ready'
+                                            ? 'Type a command and press enter…'
+                                            : 'Console is reconnecting…'
                                     }
                                     autoCapitalize="none"
                                     autoCorrect="off"
@@ -1289,7 +1350,8 @@ export default function ServerConsole({ server }: Props) {
                             {`Kill ${server.name}?`}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will forcibly terminate the server process immediately.
+                            This will forcibly terminate the server process
+                            immediately.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -1324,13 +1386,13 @@ export default function ServerConsole({ server }: Props) {
 
 function statusActionLabel(signal: ServerPowerSignal): string {
     switch (signal) {
-        case "kill":
-            return "Kill";
-        case "restart":
-            return "Restart";
-        case "start":
-            return "Start";
+        case 'kill':
+            return 'Kill';
+        case 'restart':
+            return 'Restart';
+        case 'start':
+            return 'Start';
         default:
-            return "Stop";
+            return 'Stop';
     }
 }

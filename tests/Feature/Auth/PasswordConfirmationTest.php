@@ -11,8 +11,8 @@ test('confirm password screen can be rendered', function () {
 
     $response->assertOk();
 
-    $response->assertInertia(fn (Assert $page) => $page
-        ->component('auth/confirm-password'),
+    $response->assertInertia(
+        fn (Assert $page) => $page->component('auth/confirm-password'),
     );
 });
 
@@ -28,7 +28,9 @@ test('password confirmation supports legacy bcrypt passwords', function () {
     DB::table('users')
         ->whereKey($user->id)
         ->update([
-            'password' => password_hash('password', PASSWORD_BCRYPT, ['cost' => 12]),
+            'password' => password_hash('password', PASSWORD_BCRYPT, [
+                'cost' => 12,
+            ]),
         ]);
 
     $response = $this->actingAs($user)->post(route('password.confirm.store'), [

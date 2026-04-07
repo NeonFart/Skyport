@@ -137,7 +137,7 @@ function AnnouncementPreview({
     }
 
     return (
-        <div className="relative overflow-hidden rounded-xl border border-white/[0.08]">
+        <div className="relative overflow-hidden rounded-xl border border-white/8">
             <div
                 className={cn(
                     'pointer-events-none absolute inset-0',

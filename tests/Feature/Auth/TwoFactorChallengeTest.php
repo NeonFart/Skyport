@@ -8,11 +8,14 @@ beforeEach(function () {
     $this->skipUnlessFortifyFeature(Features::twoFactorAuthentication());
 });
 
-test('two factor challenge redirects to login when not authenticated', function () {
-    $response = $this->get(route('two-factor.login'));
+test(
+    'two factor challenge redirects to login when not authenticated',
+    function () {
+        $response = $this->get(route('two-factor.login'));
 
-    $response->assertRedirect(route('login'));
-});
+        $response->assertRedirect(route('login'));
+    },
+);
 
 test('two factor challenge can be rendered', function () {
     Features::twoFactorAuthentication([
@@ -22,11 +25,15 @@ test('two factor challenge can be rendered', function () {
 
     $user = User::factory()->create();
 
-    $user->forceFill([
-        'two_factor_secret' => encrypt('test-secret'),
-        'two_factor_recovery_codes' => encrypt(json_encode(['code1', 'code2'])),
-        'two_factor_confirmed_at' => now(),
-    ])->save();
+    $user
+        ->forceFill([
+            'two_factor_secret' => encrypt('test-secret'),
+            'two_factor_recovery_codes' => encrypt(
+                json_encode(['code1', 'code2']),
+            ),
+            'two_factor_confirmed_at' => now(),
+        ])
+        ->save();
 
     $this->post(route('login'), [
         'email' => $user->email,
@@ -35,7 +42,7 @@ test('two factor challenge can be rendered', function () {
 
     $this->get(route('two-factor.login'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('auth/two-factor-challenge'),
+        ->assertInertia(
+            fn (Assert $page) => $page->component('auth/two-factor-challenge'),
         );
 });

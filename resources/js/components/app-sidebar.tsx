@@ -1,18 +1,18 @@
-import { Link, usePage } from "@inertiajs/react";
-import { show as serverConsole } from "@/actions/App/Http/Controllers/Client/ServerConsoleController";
-import AuditLogIcon from "@/components/audit-log-icon";
-import CargoIcon from "@/components/cargo-icon";
-import ConsoleIcon from "@/components/console-icon";
-import DashboardIcon from "@/components/dashboard-icon";
-import FilesIcon from "@/components/files-icon";
-import LocationsIcon from "@/components/locations-icon";
-import { NavMain } from "@/components/nav-main";
-import NetworkingIcon from "@/components/networking-icon";
-import NodesIcon from "@/components/nodes-icon";
-import ServerIcon from "@/components/server-icon";
-import SettingsIcon from "@/components/settings-icon";
-import { NavUser } from "@/components/nav-user";
-import UsersIcon from "@/components/users-icon";
+import { Link, usePage } from '@inertiajs/react';
+import { console as serverConsole } from '@/routes/client/servers';
+import AuditLogIcon from '@/components/audit-log-icon';
+import CargoIcon from '@/components/cargo-icon';
+import ConsoleIcon from '@/components/console-icon';
+import DashboardIcon from '@/components/dashboard-icon';
+import FilesIcon from '@/components/files-icon';
+import LocationsIcon from '@/components/locations-icon';
+import { NavMain } from '@/components/nav-main';
+import NetworkingIcon from '@/components/networking-icon';
+import NodesIcon from '@/components/nodes-icon';
+import ServerIcon from '@/components/server-icon';
+import SettingsIcon from '@/components/settings-icon';
+import { NavUser } from '@/components/nav-user';
+import UsersIcon from '@/components/users-icon';
 import {
     Sidebar,
     SidebarContent,
@@ -21,15 +21,15 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { home } from "@/routes";
-import { index as adminCargo } from "@/routes/admin/cargo";
-import { index as adminLocations } from "@/routes/admin/locations";
-import { index as adminNodes } from "@/routes/admin/nodes";
-import { index as adminServers } from "@/routes/admin/servers";
-import { index as adminSettings } from "@/routes/admin/settings";
-import { index as adminUsers } from "@/routes/admin/users";
-import type { NavItem } from "@/types";
+} from '@/components/ui/sidebar';
+import { home } from '@/routes';
+import { index as adminCargo } from '@/routes/admin/cargo';
+import { index as adminLocations } from '@/routes/admin/locations';
+import { index as adminNodes } from '@/routes/admin/nodes';
+import { index as adminServers } from '@/routes/admin/servers';
+import { index as adminSettings } from '@/routes/admin/settings';
+import { index as adminUsers } from '@/routes/admin/users';
+import type { NavItem } from '@/types';
 
 export function AppSidebar() {
     const page = usePage();
@@ -39,49 +39,49 @@ export function AppSidebar() {
             name: string;
         };
     };
-    const isAdminSidebar = auth.user.is_admin && page.url.startsWith("/admin");
-    const isServerSidebar = page.url.startsWith("/server/");
-    const adminDashboardHref = "/admin";
-    const adminActivityHref = "/admin/activity";
+    const isAdminSidebar = auth.user.is_admin && page.url.startsWith('/admin');
+    const isServerSidebar = page.url.startsWith('/server/');
+    const adminDashboardHref = '/admin';
+    const adminActivityHref = '/admin/activity';
     const mainNavItems: NavItem[] = isAdminSidebar
         ? [
               {
-                  title: "Overview",
+                  title: 'Overview',
                   href: adminDashboardHref,
                   icon: DashboardIcon,
               },
               {
-                  title: "Users",
+                  title: 'Users',
                   href: adminUsers.url(),
                   icon: UsersIcon,
               },
               {
-                  title: "Cargo",
+                  title: 'Cargo',
                   href: adminCargo.url(),
                   icon: CargoIcon,
               },
               {
-                  title: "Locations",
+                  title: 'Locations',
                   href: adminLocations.url(),
                   icon: LocationsIcon,
               },
               {
-                  title: "Nodes",
+                  title: 'Nodes',
                   href: adminNodes.url(),
                   icon: NodesIcon,
               },
               {
-                  title: "Servers",
+                  title: 'Servers',
                   href: adminServers.url(),
                   icon: ServerIcon,
               },
               {
-                  title: "Activity",
+                  title: 'Activity',
                   href: adminActivityHref,
                   icon: AuditLogIcon,
               },
               {
-                  title: "Settings",
+                  title: 'Settings',
                   href: adminSettings.url(),
                   icon: SettingsIcon,
               },
@@ -89,43 +89,43 @@ export function AppSidebar() {
         : isServerSidebar && server
           ? [
                 {
-                    title: "Console",
+                    title: 'Console',
                     href: serverConsole.url(server.id),
                     icon: ConsoleIcon,
                 },
                 {
-                    title: "Files",
+                    title: 'Files',
                     href: `/server/${server.id}/files`,
                     icon: FilesIcon,
                 },
                 {
-                    title: "Networking",
+                    title: 'Networking',
                     icon: NetworkingIcon,
                     pinnable: false,
                     items: [
                         {
-                            title: "Allocations",
+                            title: 'Allocations',
                             href: `/server/${server.id}/networking/allocations`,
                         },
                         {
-                            title: "Firewall",
+                            title: 'Firewall',
                             href: `/server/${server.id}/networking/firewall`,
                         },
                         {
-                            title: "Interconnect",
+                            title: 'Interconnect',
                             href: `/server/${server.id}/networking/interconnect`,
                         },
                     ],
                 },
                 {
-                    title: "Settings",
+                    title: 'Settings',
                     href: `/server/${server.id}/settings`,
                     icon: SettingsIcon,
                 },
             ]
           : [
                 {
-                    title: "Home",
+                    title: 'Home',
                     href: home(),
                     icon: DashboardIcon,
                 },
@@ -158,10 +158,10 @@ export function AppSidebar() {
                     items={mainNavItems}
                     label={
                         isAdminSidebar
-                            ? "Admin"
+                            ? 'Admin'
                             : isServerSidebar
-                              ? "Server"
-                              : "Platform"
+                              ? 'Server'
+                              : 'Platform'
                     }
                 />
             </SidebarContent>

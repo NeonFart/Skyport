@@ -7,19 +7,17 @@ use App\Support\WebAuthn\CoseKey;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('login screen exposes passkey support', function () {
-    $this->get(route('login'))
-        ->assertInertia(fn (Assert $page) => $page
+    $this->get(route('login'))->assertInertia(
+        fn (Assert $page) => $page
             ->component('auth/login')
             ->where('canUsePasskeys', true),
-        );
+    );
 });
 
 test('guests can request passkey authentication options', function () {
     $response = $this->getJson(route('passkeys.authentication.create'));
 
-    $response
-        ->assertOk()
-        ->assertJsonPath('publicKey.rpId', 'localhost');
+    $response->assertOk()->assertJsonPath('publicKey.rpId', 'localhost');
 
     expect(session('passkeys.authentication.challenge'))->not->toBeEmpty();
 });
@@ -33,7 +31,13 @@ test('users can authenticate with a registered passkey', function () {
     $this->getJson(route('passkeys.authentication.create'))->assertOk();
 
     $challenge = session('passkeys.authentication.challenge');
-    $payload = makeAuthenticationPayload($challenge, $origin, $rpId, $passkey, $privateKey);
+    $payload = makeAuthenticationPayload(
+        $challenge,
+        $origin,
+        $rpId,
+        $passkey,
+        $privateKey,
+    );
 
     $this->postJson(route('passkeys.authentication.store'), $payload)
         ->assertOk()
@@ -65,12 +69,14 @@ function storedPasskeyFor(User $user): array
         -3 => $details['ec']['y'],
     ]);
 
-    $passkey = Passkey::factory()->for($user)->create([
-        'counter' => 0,
-        'credential_id' => Base64Url::encode($credentialId),
-        'name' => 'iPhone Passkey',
-        'public_key' => $publicKey,
-    ]);
+    $passkey = Passkey::factory()
+        ->for($user)
+        ->create([
+            'counter' => 0,
+            'credential_id' => Base64Url::encode($credentialId),
+            'name' => 'iPhone Passkey',
+            'public_key' => $publicKey,
+        ]);
 
     return [$privateKey, $passkey];
 }
@@ -86,15 +92,16 @@ function makeAuthenticationPayload(
     Passkey $passkey,
     string $privateKey,
 ): array {
-    $authenticatorData = hash('sha256', $rpId, true)
-        .chr(0x01)
-        .pack('N', 1);
+    $authenticatorData = hash('sha256', $rpId, true).chr(0x01).pack('N', 1);
 
-    $clientDataJson = json_encode([
-        'challenge' => $challenge,
-        'origin' => $origin,
-        'type' => 'webauthn.get',
-    ], JSON_THROW_ON_ERROR);
+    $clientDataJson = json_encode(
+        [
+            'challenge' => $challenge,
+            'origin' => $origin,
+            'type' => 'webauthn.get',
+        ],
+        JSON_THROW_ON_ERROR,
+    );
 
     openssl_sign(
         $authenticatorData.hash('sha256', $clientDataJson, true),

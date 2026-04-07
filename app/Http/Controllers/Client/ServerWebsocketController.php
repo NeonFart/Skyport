@@ -15,7 +15,9 @@ class ServerWebsocketController extends Controller
 {
     use AuthorizesServerAccess;
 
-    public function __construct(private ServerWebsocketTokenService $serverWebsocketTokenService) {}
+    public function __construct(
+        private ServerWebsocketTokenService $serverWebsocketTokenService,
+    ) {}
 
     public function show(Request $request, Server $server): JsonResponse
     {
@@ -24,9 +26,12 @@ class ServerWebsocketController extends Controller
         try {
             $payload = $this->serverWebsocketTokenService->issue($server);
         } catch (InvalidArgumentException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return response()->json(
+                [
+                    'message' => $exception->getMessage(),
+                ],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
         return response()->json([

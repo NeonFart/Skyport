@@ -114,7 +114,7 @@ function visiblePaginationItems(
 
     const sortedPages = [...pages]
         .filter((page) => page >= 1 && page <= data.last_page)
-        .sort((left, right) => left - right);
+        .toSorted((left, right) => left - right);
 
     const items: VisiblePaginationItem[] = [];
 
@@ -249,7 +249,7 @@ function BulkActionBar({
                 <div className="absolute inset-x-0 bottom-0 h-2/4 backdrop-blur-sm" />
                 <div className="absolute inset-x-0 bottom-0 h-3/4 backdrop-blur-[2px]" />
                 <div className="absolute inset-x-0 bottom-0 h-full backdrop-blur-[1px]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-background/60 to-transparent" />
             </div>
 
             {/* Action bar */}
@@ -356,6 +356,29 @@ function DataTableRow<T extends { id: number }>({
     menu?: ReactNode;
     selectable: boolean;
 }) {
+    const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (!onClick) {
+            return;
+        }
+
+        if ((event.target as HTMLElement).closest('[data-row-action="true"]')) {
+            return;
+        }
+
+        onClick();
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!onClick) {
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick();
+        }
+    };
+
     return (
         <div
             className={cn(
@@ -379,12 +402,15 @@ function DataTableRow<T extends { id: number }>({
                     'relative flex items-center px-3 py-2.5',
                     onClick && 'cursor-pointer',
                 )}
-                onClick={onClick}
+                onClick={handleClick}
+                onKeyDown={handleKeyDown}
+                role={onClick ? 'button' : undefined}
+                tabIndex={onClick ? 0 : undefined}
             >
                 {selectable ? (
                     <div
                         className="mr-3 flex items-center"
-                        onClick={(e) => e.stopPropagation()}
+                        data-row-action="true"
                     >
                         <Checkbox
                             checked={isSelected}
@@ -394,8 +420,11 @@ function DataTableRow<T extends { id: number }>({
                     </div>
                 ) : null}
 
-                {columns.map((col, i) => (
-                    <div key={i} className={col.width}>
+                {columns.map((col) => (
+                    <div
+                        key={`${col.label}-${col.width}`}
+                        className={col.width}
+                    >
                         {col.render(item)}
                     </div>
                 ))}
@@ -403,8 +432,7 @@ function DataTableRow<T extends { id: number }>({
                 {menu && (
                     <div
                         className="ml-auto flex items-center"
-                        onClick={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
+                        data-row-action="true"
                     >
                         {menu}
                     </div>
@@ -433,6 +461,7 @@ export function DataTable<T extends { id: number }>({
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
     const [bulkDeleting, setBulkDeleting] = useState(false);
+    const selectionResetKey = `${data.current_page}:${data.data.map((item) => item.id).join(',')}`;
 
     const allSelected =
         data.data.length > 0 && selected.size === data.data.length;
@@ -460,8 +489,9 @@ export function DataTable<T extends { id: number }>({
 
     // Clear selection on data change
     useEffect(() => {
+        void selectionResetKey;
         setSelected(new Set());
-    }, [data.current_page, data.data]);
+    }, [selectionResetKey]);
 
     // Smooth height animation
     const tableBodyRef = useRef<HTMLDivElement>(null);
@@ -510,9 +540,9 @@ export function DataTable<T extends { id: number }>({
                                 />
                             </div>
                         ) : null}
-                        {columns.map((col, i) => (
+                        {columns.map((col) => (
                             <span
-                                key={i}
+                                key={`${col.label}-${col.width}`}
                                 className={cn(
                                     'block text-xs font-medium text-muted-foreground',
                                     col.width,

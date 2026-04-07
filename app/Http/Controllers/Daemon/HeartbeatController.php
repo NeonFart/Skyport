@@ -11,30 +11,43 @@ use Symfony\Component\HttpFoundation\Response;
 
 class HeartbeatController extends Controller
 {
-    public function __construct(private NodeHeartbeatService $nodeHeartbeatService) {}
+    public function __construct(
+        private NodeHeartbeatService $nodeHeartbeatService,
+    ) {}
 
     public function store(HeartbeatDaemonRequest $request): JsonResponse
     {
         $daemonSecret = $request->bearerToken();
 
         if (! $daemonSecret) {
-            return response()->json([
-                'message' => 'Missing daemon secret.',
-            ], Response::HTTP_UNAUTHORIZED);
+            return response()->json(
+                [
+                    'message' => 'Missing daemon secret.',
+                ],
+                Response::HTTP_UNAUTHORIZED,
+            );
         }
 
         try {
-            $payload = $this->nodeHeartbeatService->record($daemonSecret, $request->validated());
+            $payload = $this->nodeHeartbeatService->record(
+                $daemonSecret,
+                $request->validated(),
+            );
         } catch (InvalidArgumentException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return response()->json(
+                [
+                    'message' => $exception->getMessage(),
+                ],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
         return response()->json([
             'ok' => true,
             'configuration' => $payload['configuration'],
-            'last_seen_at' => $payload['node']->last_seen_at?->toIso8601String(),
+            'last_seen_at' => $payload[
+                'node'
+            ]->last_seen_at?->toIso8601String(),
         ]);
     }
 }

@@ -9,7 +9,7 @@
 
 @font-face {
     font-family: 'Ioskeley Mono';
-    src: url('/fonts/ioskeley-mono/IoskeleyMono-Regular.woff2')
+    src: url('../../public/fonts/ioskeley-mono/IoskeleyMono-Regular.woff2')
         format('woff2');
     font-style: normal;
     font-weight: 400;
@@ -18,7 +18,7 @@
 
 @font-face {
     font-family: 'Ioskeley Mono';
-    src: url('/fonts/ioskeley-mono/IoskeleyMono-Italic.woff2')
+    src: url('../../public/fonts/ioskeley-mono/IoskeleyMono-Italic.woff2')
         format('woff2');
     font-style: italic;
     font-weight: 400;
@@ -27,7 +27,7 @@
 
 @font-face {
     font-family: 'Ioskeley Mono';
-    src: url('/fonts/ioskeley-mono/IoskeleyMono-Medium.woff2')
+    src: url('../../public/fonts/ioskeley-mono/IoskeleyMono-Medium.woff2')
         format('woff2');
     font-style: normal;
     font-weight: 500;
@@ -36,7 +36,7 @@
 
 @font-face {
     font-family: 'Ioskeley Mono';
-    src: url('/fonts/ioskeley-mono/IoskeleyMono-MediumItalic.woff2')
+    src: url('../../public/fonts/ioskeley-mono/IoskeleyMono-MediumItalic.woff2')
         format('woff2');
     font-style: italic;
     font-weight: 500;
@@ -45,7 +45,7 @@
 
 @font-face {
     font-family: 'Ioskeley Mono';
-    src: url('/fonts/ioskeley-mono/IoskeleyMono-SemiBold.woff2')
+    src: url('../../public/fonts/ioskeley-mono/IoskeleyMono-SemiBold.woff2')
         format('woff2');
     font-style: normal;
     font-weight: 600;
@@ -54,7 +54,7 @@
 
 @font-face {
     font-family: 'Ioskeley Mono';
-    src: url('/fonts/ioskeley-mono/IoskeleyMono-SemiBoldItalic.woff2')
+    src: url('../../public/fonts/ioskeley-mono/IoskeleyMono-SemiBoldItalic.woff2')
         format('woff2');
     font-style: italic;
     font-weight: 600;
@@ -63,7 +63,7 @@
 
 @font-face {
     font-family: 'Ioskeley Mono';
-    src: url('/fonts/ioskeley-mono/IoskeleyMono-Bold.woff2')
+    src: url('../../public/fonts/ioskeley-mono/IoskeleyMono-Bold.woff2')
         format('woff2');
     font-style: normal;
     font-weight: 700;
@@ -72,7 +72,7 @@
 
 @font-face {
     font-family: 'Ioskeley Mono';
-    src: url('/fonts/ioskeley-mono/IoskeleyMono-BoldItalic.woff2')
+    src: url('../../public/fonts/ioskeley-mono/IoskeleyMono-BoldItalic.woff2')
         format('woff2');
     font-style: italic;
     font-weight: 700;
@@ -342,4 +342,3 @@
         transform: scale(1.1);
     }
 }
-
