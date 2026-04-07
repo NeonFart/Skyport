@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Node;
 use App\Models\Server;
 use App\Models\User;
+use App\Services\PanelVersionService;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(PanelVersionService $panelVersionService): Response
     {
         $startDate = now()->subDays(29)->startOfDay();
 
@@ -139,7 +140,8 @@ class DashboardController extends Controller
             'totalNodes' => $totalNodes,
             'totalMemoryMib' => $totalMemoryMib,
             'totalDiskMib' => $totalDiskMib,
-            'version' => $this->panelVersion(),
+            'version' => $panelVersionService->current(),
+            'commit' => $panelVersionService->commit(),
         ]);
     }
 
@@ -164,16 +166,5 @@ class DashboardController extends Controller
         }
 
         return ucfirst("{$noun} are steady");
-    }
-
-    protected function panelVersion(): string
-    {
-        $hash = rescue(
-            fn (): string => trim((string) shell_exec('git rev-parse --short HEAD')),
-            'unknown',
-            false,
-        );
-
-        return "0.0.1-alpha ({$hash})";
     }
 }

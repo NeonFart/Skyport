@@ -4,6 +4,16 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 
+function panelCommit(): string
+{
+    $commit = trim((string) shell_exec(sprintf(
+        'git -C %s rev-parse --short HEAD 2>/dev/null',
+        escapeshellarg(base_path()),
+    )));
+
+    return $commit !== '' ? $commit : 'unknown';
+}
+
 it('forbids non-admins from viewing the admin dashboard', function () {
     $user = User::factory()->create(['is_admin' => false]);
 
@@ -47,7 +57,8 @@ it('shows the admin overview with recent user creation data', function () {
             ->has('totalNodes')
             ->has('totalMemoryMib')
             ->has('totalDiskMib')
-            ->has('version')
+            ->where('version', config('app.version'))
+            ->where('commit', panelCommit())
             ->has('usersTrendText')
             ->has('serversTrendText'),
         );

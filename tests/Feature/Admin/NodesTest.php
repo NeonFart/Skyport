@@ -28,7 +28,7 @@ test('admin can access nodes page', function () {
     $location = Location::factory()->create();
     $node = Node::factory()->create([
         'daemon_uuid' => '550e8400-e29b-41d4-a716-446655440000',
-        'daemon_version' => '0.1.0',
+        'daemon_version' => config('app.version'),
         'last_seen_at' => now(),
         'location_id' => $location->id,
         'status' => 'online',
@@ -42,7 +42,7 @@ test('admin can access nodes page', function () {
             ->component('admin/nodes')
             ->has('nodes.data', 1)
             ->where('nodes.data.0.name', $node->name)
-            ->where('nodes.data.0.daemon_version', '0.1.0')
+            ->where('nodes.data.0.daemon_version', config('app.version'))
             ->where('nodes.data.0.connection_status', 'online')
             ->where('nodes.data.0.last_seen_at', $node->last_seen_at?->toIso8601String())
             ->has('locations', 1)

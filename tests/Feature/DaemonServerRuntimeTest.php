@@ -39,7 +39,7 @@ test('daemon can report an install failure for a server', function () {
         "/api/daemon/servers/{$server->id}/runtime",
         [
             'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-            'version' => '0.1.0',
+            'version' => config('app.version'),
             'status' => 'install_failed',
             'last_error' => 'Installation failed with exit code 2.',
         ],
@@ -72,7 +72,7 @@ test('daemon can update server runtime state and clear a previous error', functi
         "/api/daemon/servers/{$server->id}/runtime",
         [
             'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-            'version' => '0.1.0',
+            'version' => config('app.version'),
             'status' => 'running',
             'last_error' => null,
         ],
@@ -99,7 +99,7 @@ test('daemon can record stopping and restarting runtime states', function () {
         "/api/daemon/servers/{$server->id}/runtime",
         [
             'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-            'version' => '0.1.0',
+            'version' => config('app.version'),
             'status' => 'stopping',
             'last_error' => null,
         ],
@@ -114,7 +114,7 @@ test('daemon can record stopping and restarting runtime states', function () {
         "/api/daemon/servers/{$server->id}/runtime",
         [
             'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-            'version' => '0.1.0',
+            'version' => config('app.version'),
             'status' => 'restarting',
             'last_error' => null,
         ],
@@ -140,7 +140,7 @@ test('daemon cannot report runtime updates for a server on another node', functi
         "/api/daemon/servers/{$server->id}/runtime",
         [
             'uuid' => '550e8400-e29b-41d4-a716-446655440001',
-            'version' => '0.1.0',
+            'version' => config('app.version'),
             'status' => 'install_failed',
             'last_error' => 'Nope.',
         ],

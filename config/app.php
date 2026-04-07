@@ -53,7 +53,7 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    'version' => env('APP_VERSION', '0.1.0'),
+    'version' => env('APP_VERSION', '1.0.0-dev'),
 
     /*
     |--------------------------------------------------------------------------

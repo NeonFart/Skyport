@@ -32,7 +32,7 @@ it('ignores server statuses in daemon heartbeat payloads', function () {
         '/api/daemon/heartbeat',
         [
             'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-            'version' => '0.1.0',
+            'version' => config('app.version'),
             'servers' => [
                 [
                     'id' => $server->id,

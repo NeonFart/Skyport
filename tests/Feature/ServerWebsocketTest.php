@@ -50,7 +50,7 @@ test('server owner can fetch websocket credentials', function () {
     $response->assertSuccessful();
 
     expect($response->json('data.socket'))
-        ->toBe("wss://node.example.com:2800/api/daemon/servers/{$dependencies['server']->id}/ws?uuid=550e8400-e29b-41d4-a716-446655440000&panel_version=0.1.0");
+        ->toBe("wss://node.example.com:2800/api/daemon/servers/{$dependencies['server']->id}/ws?uuid=550e8400-e29b-41d4-a716-446655440000&panel_version=".config('app.version'));
     expect($response->json('data.expires_at'))->not->toBeEmpty();
     expect($response->json('data.token'))
         ->toContain('.')

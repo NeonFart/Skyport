@@ -12,7 +12,7 @@ test('daemon can enroll with a valid token', function () {
     $response = postJson('/api/daemon/enroll', [
         'token' => $issued['token'],
         'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-        'version' => '0.1.0',
+        'version' => config('app.version'),
         'hostname' => 'node-ams-01',
         'reported_ip' => '127.0.0.1',
         'os' => 'linux',
@@ -56,7 +56,7 @@ test('daemon can enroll with a valid token', function () {
 
     expect($node->status)->toBe('online');
     expect($node->daemon_uuid)->toBe('550e8400-e29b-41d4-a716-446655440000');
-    expect($node->daemon_version)->toBe('0.1.0');
+    expect($node->daemon_version)->toBe(config('app.version'));
     expect($node->enrolled_at)->not->toBeNull();
 });
 
@@ -67,7 +67,7 @@ test('panel assigns a new daemon uuid when default placeholder is used', functio
     $response = postJson('/api/daemon/enroll', [
         'token' => $issued['token'],
         'uuid' => '00000000-0000-0000-0000-000000000000',
-        'version' => '0.1.0',
+        'version' => config('app.version'),
     ]);
 
     $response
@@ -87,7 +87,7 @@ test('daemon cannot enroll with an invalid token', function () {
     $response = postJson('/api/daemon/enroll', [
         'token' => 'invalid-token',
         'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-        'version' => '0.1.0',
+        'version' => config('app.version'),
     ]);
 
     $response
@@ -121,14 +121,14 @@ test('daemon heartbeat updates last seen time', function () {
     $configuration = postJson('/api/daemon/enroll', [
         'token' => $issued['token'],
         'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-        'version' => '0.1.0',
+        'version' => config('app.version'),
     ])->assertCreated()->json();
 
     $response = postJson(
         '/api/daemon/heartbeat',
         [
             'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-            'version' => '0.1.0',
+            'version' => config('app.version'),
         ],
         ['Authorization' => 'Bearer '.$configuration['daemon_secret']],
     );
@@ -152,7 +152,7 @@ test('daemon heartbeat updates last seen time', function () {
 
     $node->refresh();
 
-    expect($node->daemon_version)->toBe('0.1.0');
+    expect($node->daemon_version)->toBe(config('app.version'));
     expect($node->last_seen_at)->not->toBeNull();
 });
 
@@ -163,7 +163,7 @@ test('daemon heartbeat rejects an incompatible daemon version', function () {
     $configuration = postJson('/api/daemon/enroll', [
         'token' => $issued['token'],
         'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-        'version' => '0.1.0',
+        'version' => config('app.version'),
     ])->assertCreated()->json();
 
     $response = postJson(
@@ -187,7 +187,7 @@ test('daemon heartbeat rejects an invalid secret', function () {
         '/api/daemon/heartbeat',
         [
             'uuid' => '550e8400-e29b-41d4-a716-446655440000',
-            'version' => '0.1.0',
+            'version' => config('app.version'),
         ],
         ['Authorization' => 'Bearer invalid-secret'],
     );

@@ -126,7 +126,7 @@ test('server owner can send an allowed power action', function () {
     Http::assertSent(function ($request) use ($dependencies) {
         return $request->url() === "https://node.example.com:2800/api/daemon/servers/{$dependencies['server']->id}/power"
             && $request->hasHeader('Authorization', 'Bearer callback-token')
-            && $request['panel_version'] === '0.1.0'
+            && $request['panel_version'] === config('app.version')
             && $request['signal'] === 'start'
             && $request['uuid'] === '550e8400-e29b-41d4-a716-446655440000';
     });
