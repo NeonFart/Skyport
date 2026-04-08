@@ -472,41 +472,34 @@ async function parseJson<T>(response: Response): Promise<T | null> {
 
 function InlinePathSummary({
     currentPath,
-    itemCount,
     onNavigate,
 }: {
     currentPath: string;
-    itemCount: number;
     onNavigate: (path: string) => void;
 }) {
     const segments = pathSegments(currentPath);
 
     return (
-        <div className="-mt-5 mb-6 px-1">
-            <div className="-ml-4 flex flex-wrap items-center gap-1 text-sm font-medium text-foreground">
-                <button
-                    type="button"
-                    onClick={() => onNavigate('')}
-                    className="rounded px-1.5 py-0.5 transition-colors hover:bg-muted"
-                >
-                    /home/container
-                </button>
-                {segments.map((segment) => (
-                    <div key={segment.path} className="flex items-center gap-1">
-                        <span className="text-muted-foreground">/</span>
-                        <button
-                            type="button"
-                            onClick={() => onNavigate(segment.path)}
-                            className="rounded px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                            {segment.label}
-                        </button>
-                    </div>
-                ))}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-                {itemCount} item{itemCount === 1 ? '' : 's'} in this directory.
-            </p>
+        <div className="-ml-4 flex flex-wrap items-center gap-1 text-sm font-medium text-foreground">
+            <button
+                type="button"
+                onClick={() => onNavigate('')}
+                className="rounded px-1.5 py-0.5 transition-colors hover:bg-muted"
+            >
+                /home/container
+            </button>
+            {segments.map((segment) => (
+                <div key={segment.path} className="flex items-center gap-1">
+                    <span className="text-muted-foreground">/</span>
+                    <button
+                        type="button"
+                        onClick={() => onNavigate(segment.path)}
+                        className="rounded px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                        {segment.label}
+                    </button>
+                </div>
+            ))}
         </div>
     );
 }
@@ -821,6 +814,15 @@ export default function ServerFiles({
             entry.name.toLowerCase().includes(normalizedSearch),
         );
     }, [directory?.entries, search]);
+    const selectedRowIds = useMemo(
+        () =>
+            new Set(
+                filteredEntries
+                    .filter((entry) => selectedPaths.has(entry.path))
+                    .map((entry) => entry.id),
+            ),
+        [filteredEntries, selectedPaths],
+    );
     const fileTable = useMemo(
         () => fakePagination<FileRow>(filteredEntries),
         [filteredEntries],
@@ -1370,11 +1372,56 @@ export default function ServerFiles({
                     description="Browse, upload, edit, archive, and organize files inside your server container."
                 />
 
-                <InlinePathSummary
-                    currentPath={currentPath}
-                    itemCount={directory?.entries.length ?? 0}
-                    onNavigate={navigateTo}
-                />
+                <div className="-mt-5 mb-6 flex flex-wrap items-start justify-between gap-4 px-1">
+                    <div>
+                        <InlinePathSummary
+                            currentPath={currentPath}
+                            onNavigate={navigateTo}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {directory?.entries.length ?? 0} item{(directory?.entries.length ?? 0) === 1 ? '' : 's'} in this directory.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-end gap-3">
+                        {parentPath !== null ? (
+                            <Button
+                                variant="secondary"
+                                onClick={() => navigateTo(parentPath)}
+                            >
+                                <FolderUp className="h-3.5 w-3.5" />
+                                Up
+                            </Button>
+                        ) : null}
+                        <Button
+                            variant="secondary"
+                            onClick={reloadDirectory}
+                            disabled={refreshing}
+                        >
+                            {refreshing ? (
+                                <Spinner />
+                            ) : (
+                                <RefreshCw className="h-3.5 w-3.5" />
+                            )}
+                            Refresh
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={() => uploadInputRef.current?.click()}
+                        >
+                            <Upload className="h-3.5 w-3.5" />
+                            Upload
+                        </Button>
+                        <Button onClick={() => setCreateDirectoryOpen(true)}>
+                            <FolderPlus className="h-3.5 w-3.5" />
+                            New folder
+                        </Button>
+                        <Button onClick={() => setCreateFileOpen(true)}>
+                            <Plus className="h-3.5 w-3.5" />
+                            New file
+                        </Button>
+                    </div>
+                </div>
 
                 {directoryError ? (
                     <Alert className="mb-6 border-[#d92400]/20 bg-[#d92400]/6">
@@ -1386,51 +1433,22 @@ export default function ServerFiles({
 
                 <UploadProgressCard items={uploadItems} />
 
-                <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
-                    {parentPath !== null ? (
-                        <Button
-                            variant="secondary"
-                            onClick={() => navigateTo(parentPath)}
-                        >
-                            <FolderUp className="h-3.5 w-3.5" />
-                            Up
-                        </Button>
-                    ) : null}
-                    <Button
-                        variant="secondary"
-                        onClick={reloadDirectory}
-                        disabled={refreshing}
-                    >
-                        {refreshing ? (
-                            <Spinner />
-                        ) : (
-                            <RefreshCw className="h-3.5 w-3.5" />
-                        )}
-                        Refresh
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        onClick={() => uploadInputRef.current?.click()}
-                    >
-                        <Upload className="h-3.5 w-3.5" />
-                        Upload
-                    </Button>
-                    <Button onClick={() => setCreateDirectoryOpen(true)}>
-                        <FolderPlus className="h-3.5 w-3.5" />
-                        New folder
-                    </Button>
-                    <Button onClick={() => setCreateFileOpen(true)}>
-                        <Plus className="h-3.5 w-3.5" />
-                        New file
-                    </Button>
-                </div>
-
                 <DataTable
                     data={fileTable}
                     columns={columns}
                     searchValue={search}
                     onSearch={setSearch}
                     selectable={false}
+                    selectedIds={selectedRowIds}
+                    onSelectedIdsChange={(ids) => {
+                        setSelectedPaths(
+                            new Set(
+                                filteredEntries
+                                    .filter((entry) => ids.has(entry.id))
+                                    .map((entry) => entry.path),
+                            ),
+                        );
+                    }}
                     entityName="item"
                     emptyMessage="This directory is empty"
                     emptySearchMessage="Try another file name or clear your search."

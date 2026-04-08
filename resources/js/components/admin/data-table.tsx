@@ -58,6 +58,8 @@ type DataTableProps<T extends { id: number }> = {
     emptySearchMessage?: string;
     entityName?: string;
     selectable?: boolean;
+    selectedIds?: Set<number>;
+    onSelectedIdsChange?: (ids: Set<number>) => void;
 };
 
 // ─── Pagination ──────────────────────────────────────────────────────────────
@@ -249,7 +251,7 @@ function BulkActionBar({
                 <div className="absolute inset-x-0 bottom-0 h-2/4 backdrop-blur-sm" />
                 <div className="absolute inset-x-0 bottom-0 h-3/4 backdrop-blur-[2px]" />
                 <div className="absolute inset-x-0 bottom-0 h-full backdrop-blur-[1px]" />
-                <div className="absolute inset-0 bg-linear-to-t from-background/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
             </div>
 
             {/* Action bar */}
@@ -356,29 +358,6 @@ function DataTableRow<T extends { id: number }>({
     menu?: ReactNode;
     selectable: boolean;
 }) {
-    const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-        if (!onClick) {
-            return;
-        }
-
-        if ((event.target as HTMLElement).closest('[data-row-action="true"]')) {
-            return;
-        }
-
-        onClick();
-    };
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (!onClick) {
-            return;
-        }
-
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            onClick();
-        }
-    };
-
     return (
         <div
             className={cn(
@@ -402,15 +381,12 @@ function DataTableRow<T extends { id: number }>({
                     'relative flex items-center px-3 py-2.5',
                     onClick && 'cursor-pointer',
                 )}
-                onClick={handleClick}
-                onKeyDown={handleKeyDown}
-                role={onClick ? 'button' : undefined}
-                tabIndex={onClick ? 0 : undefined}
+                onClick={onClick}
             >
                 {selectable ? (
                     <div
                         className="mr-3 flex items-center"
-                        data-row-action="true"
+                        onClick={(e) => e.stopPropagation()}
                     >
                         <Checkbox
                             checked={isSelected}
@@ -420,11 +396,8 @@ function DataTableRow<T extends { id: number }>({
                     </div>
                 ) : null}
 
-                {columns.map((col) => (
-                    <div
-                        key={`${col.label}-${col.width}`}
-                        className={col.width}
-                    >
+                {columns.map((col, i) => (
+                    <div key={i} className={col.width}>
                         {col.render(item)}
                     </div>
                 ))}
@@ -432,7 +405,8 @@ function DataTableRow<T extends { id: number }>({
                 {menu && (
                     <div
                         className="ml-auto flex items-center"
-                        data-row-action="true"
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
                     >
                         {menu}
                     </div>
@@ -457,11 +431,23 @@ export function DataTable<T extends { id: number }>({
     emptySearchMessage = 'Try a different search term.',
     entityName = 'item',
     selectable = true,
+    selectedIds,
+    onSelectedIdsChange,
 }: DataTableProps<T>) {
-    const [selected, setSelected] = useState<Set<number>>(new Set());
+    const [uncontrolledSelected, setUncontrolledSelected] = useState<Set<number>>(
+        new Set(),
+    );
     const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
     const [bulkDeleting, setBulkDeleting] = useState(false);
-    const selectionResetKey = `${data.current_page}:${data.data.map((item) => item.id).join(',')}`;
+
+    const selected = selectedIds ?? uncontrolledSelected;
+    const setSelected = (value: Set<number>): void => {
+        if (selectedIds === undefined) {
+            setUncontrolledSelected(value);
+        }
+
+        onSelectedIdsChange?.(value);
+    };
 
     const allSelected =
         data.data.length > 0 && selected.size === data.data.length;
@@ -476,22 +462,19 @@ export function DataTable<T extends { id: number }>({
     };
 
     const toggleOne = (id: number) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-            return next;
-        });
+        const next = new Set(selected);
+        if (next.has(id)) {
+            next.delete(id);
+        } else {
+            next.add(id);
+        }
+        setSelected(next);
     };
 
     // Clear selection on data change
     useEffect(() => {
-        void selectionResetKey;
         setSelected(new Set());
-    }, [selectionResetKey]);
+    }, [data.current_page, data.data]);
 
     // Smooth height animation
     const tableBodyRef = useRef<HTMLDivElement>(null);
@@ -540,9 +523,9 @@ export function DataTable<T extends { id: number }>({
                                 />
                             </div>
                         ) : null}
-                        {columns.map((col) => (
+                        {columns.map((col, i) => (
                             <span
-                                key={`${col.label}-${col.width}`}
+                                key={i}
                                 className={cn(
                                     'block text-xs font-medium text-muted-foreground',
                                     col.width,
