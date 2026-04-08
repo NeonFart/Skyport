@@ -21,6 +21,7 @@ class ServerFactory extends Factory
             'cargo_id' => Cargo::factory(),
             'allocation_id' => null,
             'name' => fake()->unique()->words(2, true),
+            'docker_image' => null,
             'memory_mib' => fake()->randomElement([1024, 2048, 4096, 8192]),
             'cpu_limit' => fake()->randomElement([100, 200, 400]),
             'disk_mib' => fake()->randomElement([5120, 10240, 20480]),

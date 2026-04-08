@@ -1,5 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
-import { console as serverConsole } from '@/routes/client/servers';
+import {
+    console as serverConsole,
+    settings as serverSettings,
+} from '@/routes/client/servers';
 import AuditLogIcon from '@/components/audit-log-icon';
 import CargoIcon from '@/components/cargo-icon';
 import ConsoleIcon from '@/components/console-icon';
@@ -119,7 +122,7 @@ export function AppSidebar() {
                 },
                 {
                     title: 'Settings',
-                    href: `/server/${server.id}/settings`,
+                    href: serverSettings.url(server.id),
                     icon: SettingsIcon,
                 },
             ]

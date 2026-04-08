@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
         'cargo_id',
         'allocation_id',
         'name',
+        'docker_image',
         'memory_mib',
         'cpu_limit',
         'disk_mib',

@@ -33,6 +33,7 @@ class ServerConfigurationService
      *         variables: array<int, array<string, mixed>>
      *     },
      *     created_at: string,
+     *     docker_image: string|null,
      *     id: int,
      *     limits: array{cpu_limit: int, disk_mib: int, memory_mib: int},
      *     name: string,
@@ -85,6 +86,7 @@ class ServerConfigurationService
             ],
             'created_at' => $server->created_at?->toIso8601String() ??
                 now()->toIso8601String(),
+            'docker_image' => $server->docker_image,
             'id' => $server->id,
             'limits' => [
                 'cpu_limit' => $server->cpu_limit,

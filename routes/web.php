@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\PasskeyAuthenticationController;
 use App\Http\Controllers\Client\ServerConsoleController;
 use App\Http\Controllers\Client\ServerPowerController;
+use App\Http\Controllers\Client\ServerSettingsController;
 use App\Http\Controllers\Client\ServerWebsocketController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +36,18 @@ Route::middleware(['auth'])->group(function () {
         ServerConsoleController::class,
         'show',
     ])->name('client.servers.console');
+    Route::get('server/{server}/settings', [
+        ServerSettingsController::class,
+        'show',
+    ])->name('client.servers.settings');
+    Route::patch('server/{server}/settings/general', [
+        ServerSettingsController::class,
+        'updateGeneral',
+    ])->name('client.servers.settings.general.update');
+    Route::patch('server/{server}/settings/startup', [
+        ServerSettingsController::class,
+        'updateStartup',
+    ])->name('client.servers.settings.startup.update');
     Route::post('api/client/servers/{server}/power', [
         ServerPowerController::class,
         'store',

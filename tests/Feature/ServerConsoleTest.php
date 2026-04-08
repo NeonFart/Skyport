@@ -74,13 +74,12 @@ test('server owner can view the console page', function () {
             ->where('server.allowed_actions.kill', false));
 });
 
-test('removed server filesystem and settings pages are not found', function () {
+test('removed server filesystem page is not found', function () {
     $dependencies = serverConsoleDependencies();
 
     actingAs($dependencies['user']);
 
     get("/server/{$dependencies['server']->id}/filesystem")->assertNotFound();
-    get("/server/{$dependencies['server']->id}/settings")->assertNotFound();
 });
 
 test('admin can view the console page for any server', function () {
