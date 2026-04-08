@@ -1006,9 +1006,6 @@ function NodeModal({
             <DialogContentFull>
                 <div className="px-8 pt-8 pb-4">
                     <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted/60">
-                            <Globe className="h-5 w-5 text-muted-foreground" />
-                        </div>
                         <div className="min-w-0 flex-1">
                             <DialogTitle className="text-lg">
                                 {node.name}
