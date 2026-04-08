@@ -231,13 +231,15 @@ function isArchive(entry: DirectoryEntry): boolean {
 function fileVisual(entry: DirectoryEntry): {
     icon: typeof Folder;
     iconClassName: string;
+    label: string;
     wrapperClassName: string;
 } {
     if (entry.kind === 'directory') {
         return {
             icon: Folder,
-            iconClassName: 'text-amber-600 dark:text-amber-400',
-            wrapperClassName: 'bg-amber-500/10',
+            iconClassName: 'text-[#d92400] dark:text-[#ff5a36]',
+            label: 'Directory',
+            wrapperClassName: 'bg-[#d92400]/10 dark:bg-[#ff5a36]/10',
         };
     }
 
@@ -247,6 +249,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: FileArchive,
             iconClassName: 'text-orange-600 dark:text-orange-400',
+            label: 'Archive',
             wrapperClassName: 'bg-orange-500/10',
         };
     }
@@ -255,6 +258,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: FileJson2,
             iconClassName: 'text-lime-600 dark:text-lime-400',
+            label: 'JSON file',
             wrapperClassName: 'bg-lime-500/10',
         };
     }
@@ -275,6 +279,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: FileCode2,
             iconClassName: 'text-sky-600 dark:text-sky-400',
+            label: 'Code file',
             wrapperClassName: 'bg-sky-500/10',
         };
     }
@@ -290,6 +295,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: FileCog,
             iconClassName: 'text-violet-600 dark:text-violet-400',
+            label: 'Config file',
             wrapperClassName: 'bg-violet-500/10',
         };
     }
@@ -305,6 +311,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: Terminal,
             iconClassName: 'text-emerald-600 dark:text-emerald-400',
+            label: 'Shell file',
             wrapperClassName: 'bg-emerald-500/10',
         };
     }
@@ -320,6 +327,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: FileImage,
             iconClassName: 'text-pink-600 dark:text-pink-400',
+            label: 'Image file',
             wrapperClassName: 'bg-pink-500/10',
         };
     }
@@ -333,6 +341,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: FileVideo2,
             iconClassName: 'text-fuchsia-600 dark:text-fuchsia-400',
+            label: 'Video file',
             wrapperClassName: 'bg-fuchsia-500/10',
         };
     }
@@ -346,6 +355,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: FileAudio2,
             iconClassName: 'text-cyan-600 dark:text-cyan-400',
+            label: 'Audio file',
             wrapperClassName: 'bg-cyan-500/10',
         };
     }
@@ -358,6 +368,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: FileSpreadsheet,
             iconClassName: 'text-green-600 dark:text-green-400',
+            label: 'Spreadsheet',
             wrapperClassName: 'bg-green-500/10',
         };
     }
@@ -370,6 +381,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: ScrollText,
             iconClassName: 'text-stone-600 dark:text-stone-400',
+            label: 'Text file',
             wrapperClassName: 'bg-stone-500/10',
         };
     }
@@ -378,6 +390,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: Binary,
             iconClassName: 'text-indigo-600 dark:text-indigo-400',
+            label: 'Binary file',
             wrapperClassName: 'bg-indigo-500/10',
         };
     }
@@ -386,6 +399,7 @@ function fileVisual(entry: DirectoryEntry): {
         return {
             icon: Braces,
             iconClassName: 'text-rose-600 dark:text-rose-400',
+            label: 'XML file',
             wrapperClassName: 'bg-rose-500/10',
         };
     }
@@ -393,6 +407,7 @@ function fileVisual(entry: DirectoryEntry): {
     return {
         icon: FileText,
         iconClassName: 'text-muted-foreground',
+        label: 'File',
         wrapperClassName: 'bg-muted/60',
     };
 }
@@ -467,7 +482,7 @@ function InlinePathSummary({
     const segments = pathSegments(currentPath);
 
     return (
-        <div className="-mt-4 mb-6 pl-0.5">
+        <div className="-mt-5 -ml-3 mb-6 pl-0.5 sm:-ml-4">
             <div className="flex flex-wrap items-center gap-1 text-sm font-medium text-foreground">
                 <button
                     type="button"
@@ -1280,7 +1295,7 @@ export default function ServerFiles({
                                 {entry.name}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
-                                {entry.kind === 'directory' ? 'Directory' : entry.path}
+                                {visual.label}
                             </p>
                         </div>
                     </div>
@@ -1342,11 +1357,10 @@ export default function ServerFiles({
 
                 <UploadProgressCard items={uploadItems} />
 
-                <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+                <div className="mb-4 flex flex-wrap items-center gap-3">
                     {parentPath !== null ? (
                         <Button
-                            size="table"
-                            variant="secondary"
+                            variant="outline"
                             onClick={() => navigateTo(parentPath)}
                         >
                             <FolderUp className="h-3.5 w-3.5" />
@@ -1354,8 +1368,7 @@ export default function ServerFiles({
                         </Button>
                     ) : null}
                     <Button
-                        size="table"
-                        variant="secondary"
+                        variant="outline"
                         onClick={reloadDirectory}
                         disabled={refreshing}
                     >
@@ -1367,25 +1380,20 @@ export default function ServerFiles({
                         Refresh
                     </Button>
                     <Button
-                        size="table"
-                        variant="secondary"
+                        variant="outline"
                         onClick={() => uploadInputRef.current?.click()}
                     >
                         <Upload className="h-3.5 w-3.5" />
                         Upload
                     </Button>
                     <Button
-                        size="table"
-                        variant="secondary"
+                        variant="outline"
                         onClick={() => setCreateDirectoryOpen(true)}
                     >
                         <FolderPlus className="h-3.5 w-3.5" />
                         New folder
                     </Button>
-                    <Button
-                        size="table"
-                        onClick={() => setCreateFileOpen(true)}
-                    >
+                    <Button onClick={() => setCreateFileOpen(true)}>
                         <Plus className="h-3.5 w-3.5" />
                         New file
                     </Button>
