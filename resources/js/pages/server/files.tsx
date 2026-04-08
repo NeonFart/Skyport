@@ -53,10 +53,20 @@ import type { BreadcrumbItem } from '@/types';
 import {
     AlertCircle,
     Archive,
+    Binary,
+    Braces,
     CheckCircle2,
     Copy as CopyIcon,
     Ellipsis,
+    FileArchive,
+    FileAudio2,
+    FileCode2,
+    FileCog,
+    FileImage,
+    FileJson2,
+    FileSpreadsheet,
     FileText,
+    FileVideo2,
     Folder,
     FolderPlus,
     FolderUp,
@@ -64,7 +74,9 @@ import {
     Pencil,
     Plus,
     RefreshCw,
+    ScrollText,
     Shield,
+    Terminal,
     Trash2,
     Upload,
     WandSparkles,
@@ -214,6 +226,175 @@ function defaultArchiveName(paths: string[]): string {
 
 function isArchive(entry: DirectoryEntry): boolean {
     return entry.kind === 'file' && entry.name.toLowerCase().endsWith('.zip');
+}
+
+function fileVisual(entry: DirectoryEntry): {
+    icon: typeof Folder;
+    iconClassName: string;
+    wrapperClassName: string;
+} {
+    if (entry.kind === 'directory') {
+        return {
+            icon: Folder,
+            iconClassName: 'text-amber-600 dark:text-amber-400',
+            wrapperClassName: 'bg-amber-500/10',
+        };
+    }
+
+    const lowerName = entry.name.toLowerCase();
+
+    if (lowerName.endsWith('.zip')) {
+        return {
+            icon: FileArchive,
+            iconClassName: 'text-orange-600 dark:text-orange-400',
+            wrapperClassName: 'bg-orange-500/10',
+        };
+    }
+
+    if (lowerName.endsWith('.json')) {
+        return {
+            icon: FileJson2,
+            iconClassName: 'text-lime-600 dark:text-lime-400',
+            wrapperClassName: 'bg-lime-500/10',
+        };
+    }
+
+    if (
+        lowerName.endsWith('.js') ||
+        lowerName.endsWith('.ts') ||
+        lowerName.endsWith('.tsx') ||
+        lowerName.endsWith('.jsx') ||
+        lowerName.endsWith('.php') ||
+        lowerName.endsWith('.rs') ||
+        lowerName.endsWith('.py') ||
+        lowerName.endsWith('.go') ||
+        lowerName.endsWith('.java') ||
+        lowerName.endsWith('.c') ||
+        lowerName.endsWith('.cpp')
+    ) {
+        return {
+            icon: FileCode2,
+            iconClassName: 'text-sky-600 dark:text-sky-400',
+            wrapperClassName: 'bg-sky-500/10',
+        };
+    }
+
+    if (
+        lowerName.endsWith('.yml') ||
+        lowerName.endsWith('.yaml') ||
+        lowerName.endsWith('.toml') ||
+        lowerName.endsWith('.ini') ||
+        lowerName.endsWith('.conf') ||
+        lowerName.endsWith('.properties')
+    ) {
+        return {
+            icon: FileCog,
+            iconClassName: 'text-violet-600 dark:text-violet-400',
+            wrapperClassName: 'bg-violet-500/10',
+        };
+    }
+
+    if (
+        lowerName.endsWith('.sh') ||
+        lowerName.endsWith('.bash') ||
+        lowerName.endsWith('.zsh') ||
+        lowerName === 'dockerfile' ||
+        lowerName === '.env' ||
+        lowerName.startsWith('.env.')
+    ) {
+        return {
+            icon: Terminal,
+            iconClassName: 'text-emerald-600 dark:text-emerald-400',
+            wrapperClassName: 'bg-emerald-500/10',
+        };
+    }
+
+    if (
+        lowerName.endsWith('.png') ||
+        lowerName.endsWith('.jpg') ||
+        lowerName.endsWith('.jpeg') ||
+        lowerName.endsWith('.gif') ||
+        lowerName.endsWith('.webp') ||
+        lowerName.endsWith('.svg')
+    ) {
+        return {
+            icon: FileImage,
+            iconClassName: 'text-pink-600 dark:text-pink-400',
+            wrapperClassName: 'bg-pink-500/10',
+        };
+    }
+
+    if (
+        lowerName.endsWith('.mp4') ||
+        lowerName.endsWith('.mov') ||
+        lowerName.endsWith('.webm') ||
+        lowerName.endsWith('.mkv')
+    ) {
+        return {
+            icon: FileVideo2,
+            iconClassName: 'text-fuchsia-600 dark:text-fuchsia-400',
+            wrapperClassName: 'bg-fuchsia-500/10',
+        };
+    }
+
+    if (
+        lowerName.endsWith('.mp3') ||
+        lowerName.endsWith('.ogg') ||
+        lowerName.endsWith('.wav') ||
+        lowerName.endsWith('.flac')
+    ) {
+        return {
+            icon: FileAudio2,
+            iconClassName: 'text-cyan-600 dark:text-cyan-400',
+            wrapperClassName: 'bg-cyan-500/10',
+        };
+    }
+
+    if (
+        lowerName.endsWith('.csv') ||
+        lowerName.endsWith('.xls') ||
+        lowerName.endsWith('.xlsx')
+    ) {
+        return {
+            icon: FileSpreadsheet,
+            iconClassName: 'text-green-600 dark:text-green-400',
+            wrapperClassName: 'bg-green-500/10',
+        };
+    }
+
+    if (
+        lowerName.endsWith('.md') ||
+        lowerName.endsWith('.txt') ||
+        lowerName.endsWith('.log')
+    ) {
+        return {
+            icon: ScrollText,
+            iconClassName: 'text-stone-600 dark:text-stone-400',
+            wrapperClassName: 'bg-stone-500/10',
+        };
+    }
+
+    if (lowerName.endsWith('.nbt') || lowerName.endsWith('.dat')) {
+        return {
+            icon: Binary,
+            iconClassName: 'text-indigo-600 dark:text-indigo-400',
+            wrapperClassName: 'bg-indigo-500/10',
+        };
+    }
+
+    if (lowerName.endsWith('.xml')) {
+        return {
+            icon: Braces,
+            iconClassName: 'text-rose-600 dark:text-rose-400',
+            wrapperClassName: 'bg-rose-500/10',
+        };
+    }
+
+    return {
+        icon: FileText,
+        iconClassName: 'text-muted-foreground',
+        wrapperClassName: 'bg-muted/60',
+    };
 }
 
 function formatBytes(sizeBytes: number | null): string {
@@ -1069,38 +1250,42 @@ export default function ServerFiles({
     };
 
     const columns: Column<FileRow>[] = [
+        
         {
             label: 'Name',
             width: 'w-[42%]',
-            render: (entry) => (
-                <div className="flex min-w-0 items-center gap-3">
-                    <div
-                        className="mr-0.5 flex items-center"
-                        onClick={(event) => event.stopPropagation()}
-                    >
-                        <Checkbox
-                            checked={selectedPaths.has(entry.path)}
-                            onCheckedChange={() => togglePathSelection(entry.path)}
-                            aria-label={`Select ${entry.name}`}
-                        />
+            render: (entry) => {
+                const visual = fileVisual(entry);
+                const Icon = visual.icon;
+
+                return (
+                    <div className="flex min-w-0 items-center gap-3">
+                        <div
+                            className="mr-0.5 flex items-center"
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            <Checkbox
+                                checked={selectedPaths.has(entry.path)}
+                                onCheckedChange={() => togglePathSelection(entry.path)}
+                                aria-label={`Select ${entry.name}`}
+                            />
+                        </div>
+                        <div
+                            className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${visual.wrapperClassName}`}
+                        >
+                            <Icon className={`size-4 ${visual.iconClassName}`} />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-foreground">
+                                {entry.name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                                {entry.kind === 'directory' ? 'Directory' : entry.path}
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted/60">
-                        {entry.kind === 'directory' ? (
-                            <Folder className="size-4 text-muted-foreground" />
-                        ) : (
-                            <FileText className="size-4 text-muted-foreground" />
-                        )}
-                    </div>
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">
-                            {entry.name}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                            {entry.kind === 'directory' ? 'Directory' : entry.path}
-                        </p>
-                    </div>
-                </div>
-            ),
+                );
+            },
         },
         {
             label: 'Size',
@@ -1156,6 +1341,55 @@ export default function ServerFiles({
                 ) : null}
 
                 <UploadProgressCard items={uploadItems} />
+
+                <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+                    {parentPath !== null ? (
+                        <Button
+                            size="table"
+                            variant="secondary"
+                            onClick={() => navigateTo(parentPath)}
+                        >
+                            <FolderUp className="h-3.5 w-3.5" />
+                            Up
+                        </Button>
+                    ) : null}
+                    <Button
+                        size="table"
+                        variant="secondary"
+                        onClick={reloadDirectory}
+                        disabled={refreshing}
+                    >
+                        {refreshing ? (
+                            <Spinner />
+                        ) : (
+                            <RefreshCw className="h-3.5 w-3.5" />
+                        )}
+                        Refresh
+                    </Button>
+                    <Button
+                        size="table"
+                        variant="secondary"
+                        onClick={() => uploadInputRef.current?.click()}
+                    >
+                        <Upload className="h-3.5 w-3.5" />
+                        Upload
+                    </Button>
+                    <Button
+                        size="table"
+                        variant="secondary"
+                        onClick={() => setCreateDirectoryOpen(true)}
+                    >
+                        <FolderPlus className="h-3.5 w-3.5" />
+                        New folder
+                    </Button>
+                    <Button
+                        size="table"
+                        onClick={() => setCreateFileOpen(true)}
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        New file
+                    </Button>
+                </div>
 
                 <DataTable
                     data={fileTable}
@@ -1279,56 +1513,6 @@ export default function ServerFiles({
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
-                    actions={
-                        <>
-                            {parentPath !== null ? (
-                                <Button
-                                    size="table"
-                                    variant="secondary"
-                                    onClick={() => navigateTo(parentPath)}
-                                >
-                                    <FolderUp className="h-3.5 w-3.5" />
-                                    Up
-                                </Button>
-                            ) : null}
-                            <Button
-                                size="table"
-                                variant="secondary"
-                                onClick={reloadDirectory}
-                                disabled={refreshing}
-                            >
-                                {refreshing ? (
-                                    <Spinner />
-                                ) : (
-                                    <RefreshCw className="h-3.5 w-3.5" />
-                                )}
-                                Refresh
-                            </Button>
-                            <Button
-                                size="table"
-                                variant="secondary"
-                                onClick={() => uploadInputRef.current?.click()}
-                            >
-                                <Upload className="h-3.5 w-3.5" />
-                                Upload
-                            </Button>
-                            <Button
-                                size="table"
-                                variant="secondary"
-                                onClick={() => setCreateDirectoryOpen(true)}
-                            >
-                                <FolderPlus className="h-3.5 w-3.5" />
-                                New folder
-                            </Button>
-                            <Button
-                                size="table"
-                                onClick={() => setCreateFileOpen(true)}
-                            >
-                                <Plus className="h-3.5 w-3.5" />
-                                New file
-                            </Button>
-                        </>
-                    }
                 />
 
                 <input
