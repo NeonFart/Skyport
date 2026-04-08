@@ -618,7 +618,7 @@ export default function ServerConsole({ server }: Props) {
     const [consolePhase, setConsolePhase] = useState<
         'connecting' | 'requesting-logs' | 'ready'
     >('connecting');
-    const [, setSocketError] = useState<string | null>(null);
+    const [socketError, setSocketError] = useState<string | null>(null);
     const [consoleLines, setConsoleLines] = useState<ConsoleLine[]>([]);
     const [runtimeUsage, setRuntimeUsage] = useState<ResourceUsage>({
         cpuPercent: 0,
@@ -710,6 +710,22 @@ export default function ServerConsole({ server }: Props) {
             : `${formatPercent(runtimeUsage.cpuPercent)} / ${server.cpu_limit}%`;
     const memoryUsageLabel = `${formatMib(runtimeUsage.memoryMib)} / ${formatMib(server.memory_mib)}`;
     const diskUsageLabel = `${formatMib(runtimeUsage.diskMib)} / ${formatMib(server.disk_mib)}`;
+    const consoleOverlayTitle = socketError
+        ? 'Cannot reach the daemon'
+        : consolePhase === 'connecting'
+          ? 'Connecting...'
+          : 'Requesting console logs...';
+    const consoleOverlayDescription = socketError
+        ? 'Waiting for connectivity...'
+        : consolePhase === 'connecting'
+          ? 'Opening the websocket connection.'
+          : 'Loading recent console output.';
+    const consoleInputPlaceholder =
+        socketConnected && consolePhase === 'ready'
+            ? 'Type a command and press enter…'
+            : socketError
+              ? 'Cannot reach the daemon…'
+              : 'Console is reconnecting…';
 
     const appendConsoleLine = useCallback(
         (text: string, tone: ConsoleLineTone = 'default') => {
@@ -901,7 +917,6 @@ export default function ServerConsole({ server }: Props) {
 
         setSocketConnected(false);
         setConsolePhase('connecting');
-        setSocketError(null);
 
         try {
             const credentials = await fetchWebsocketToken(server.id);
@@ -910,6 +925,7 @@ export default function ServerConsole({ server }: Props) {
             socketRef.current = socket;
 
             socket.addEventListener('open', () => {
+                setSocketError(null);
                 socket.send(
                     JSON.stringify({
                         event: 'auth',
@@ -1229,14 +1245,10 @@ export default function ServerConsole({ server }: Props) {
                                     <Spinner className="size-4 text-muted-foreground" />
                                     <div className="space-y-0.5 text-sm">
                                         <p className="font-medium text-foreground">
-                                            {consolePhase === 'connecting'
-                                                ? 'Connecting...'
-                                                : 'Requesting console logs...'}
+                                            {consoleOverlayTitle}
                                         </p>
                                         <p className="text-muted-foreground">
-                                            {consolePhase === 'connecting'
-                                                ? 'Opening the websocket connection.'
-                                                : 'Loading recent console output.'}
+                                            {consoleOverlayDescription}
                                         </p>
                                     </div>
                                 </div>
@@ -1295,12 +1307,7 @@ export default function ServerConsole({ server }: Props) {
                                         !socketConnected ||
                                         consolePhase !== 'ready'
                                     }
-                                    placeholder={
-                                        socketConnected &&
-                                        consolePhase === 'ready'
-                                            ? 'Type a command and press enter…'
-                                            : 'Console is reconnecting…'
-                                    }
+                                    placeholder={consoleInputPlaceholder}
                                     autoCapitalize="none"
                                     autoCorrect="off"
                                     spellCheck={false}
