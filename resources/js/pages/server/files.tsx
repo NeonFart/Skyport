@@ -22,6 +22,7 @@ import {
 } from '@/components/admin/data-table';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import CodeEditor from '@/components/server/code-editor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -45,13 +46,15 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from '@/components/ui/sonner';
 import AppLayout from '@/layouts/app-layout';
+import { detectEditorLanguage } from '@/lib/file-editor-language';
 import { home } from '@/routes';
 import { console as serverConsole } from '@/routes/client/servers';
 import type { BreadcrumbItem } from '@/types';
 import {
     AlertCircle,
     Archive,
-    Copy,
+    CheckCircle2,
+    Copy as CopyIcon,
     Ellipsis,
     FileText,
     Folder,
@@ -65,8 +68,16 @@ import {
     Trash2,
     Upload,
     WandSparkles,
+    XCircle,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+    type Dispatch,
+    type SetStateAction,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 
 type DirectoryEntry = {
     kind: 'directory' | 'file';
@@ -139,8 +150,8 @@ type PermissionsState = {
 } | null;
 
 type ArchiveState = {
+    destination: string;
     name: string;
-    path: string;
     paths: string[];
 } | null;
 
@@ -152,6 +163,14 @@ type ExtractState = {
 type MutationErrorPayload = {
     errors?: Record<string, string[]>;
     message?: string;
+};
+
+type UploadItemState = {
+    name: string;
+    progress: number;
+    size: number;
+    status: 'complete' | 'error' | 'pending' | 'uploading';
+    error?: string;
 };
 
 const emptyPaginationLinks: PaginatedData<never>['links'] = [];
@@ -186,7 +205,8 @@ function baseName(path: string): string {
 function defaultArchiveName(paths: string[]): string {
     if (paths.length === 1) {
         const name = baseName(paths[0]);
-        return `${name}.zip`;
+
+        return name.toLowerCase().endsWith('.zip') ? name : `${name}.zip`;
     }
 
     return 'archive.zip';
@@ -240,45 +260,285 @@ function fakePagination<T>(data: T[]): PaginatedData<T> {
     };
 }
 
-function PathBar({
+function overallUploadProgress(items: UploadItemState[]): number {
+    if (items.length === 0) {
+        return 0;
+    }
+
+    const total = items.reduce((sum, item) => sum + item.progress, 0);
+
+    return Math.round(total / items.length);
+}
+
+async function parseJson<T>(response: Response): Promise<T | null> {
+    return (await response.json().catch(() => null)) as T | null;
+}
+
+function InlinePathSummary({
     currentPath,
+    itemCount,
     onNavigate,
 }: {
     currentPath: string;
+    itemCount: number;
     onNavigate: (path: string) => void;
 }) {
     const segments = pathSegments(currentPath);
 
     return (
-        <div className="rounded-md bg-sidebar p-1">
-            <div className="flex flex-wrap items-center gap-1 rounded-md border border-sidebar-accent bg-background px-3 py-2.5 text-sm">
+        <div className="-mt-4 mb-6 pl-0.5">
+            <div className="flex flex-wrap items-center gap-1 text-sm font-medium text-foreground">
                 <button
                     type="button"
                     onClick={() => onNavigate('')}
-                    className="rounded px-2 py-1 font-medium text-foreground transition-colors hover:bg-muted"
+                    className="rounded px-1.5 py-0.5 transition-colors hover:bg-muted"
                 >
                     /home/container
                 </button>
-
                 {segments.map((segment) => (
                     <div key={segment.path} className="flex items-center gap-1">
                         <span className="text-muted-foreground">/</span>
                         <button
                             type="button"
                             onClick={() => onNavigate(segment.path)}
-                            className="rounded px-2 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            className="rounded px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                             {segment.label}
                         </button>
                     </div>
                 ))}
             </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+                {itemCount} item{itemCount === 1 ? '' : 's'} in this directory.
+            </p>
         </div>
     );
 }
 
-async function parseJson<T>(response: Response): Promise<T | null> {
-    return (await response.json().catch(() => null)) as T | null;
+function FilesBulkActionBar({
+    count,
+    onArchive,
+    onCancel,
+    onCopy,
+    onDelete,
+    onMove,
+    onPermissions,
+}: {
+    count: number;
+    onArchive: () => void;
+    onCancel: () => void;
+    onCopy: () => void;
+    onDelete: () => void;
+    onMove: () => void;
+    onPermissions: () => void;
+}) {
+    return (
+        <>
+            <div
+                aria-hidden="true"
+                className={
+                    count > 0
+                        ? 'pointer-events-none fixed inset-x-0 -bottom-4 z-40 h-52 translate-y-0 opacity-100 transition-all duration-300 ease-out'
+                        : 'pointer-events-none fixed inset-x-0 -bottom-4 z-40 h-52 translate-y-full opacity-0 transition-all duration-300 ease-out'
+                }
+            >
+                <div className="absolute inset-x-0 bottom-0 h-1/4 backdrop-blur-md" />
+                <div className="absolute inset-x-0 bottom-0 h-2/4 backdrop-blur-sm" />
+                <div className="absolute inset-x-0 bottom-0 h-3/4 backdrop-blur-[2px]" />
+                <div className="absolute inset-x-0 bottom-0 h-full backdrop-blur-[1px]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+            </div>
+
+            <div
+                className={
+                    count > 0
+                        ? 'fixed inset-x-0 bottom-0 z-50 flex translate-y-0 justify-center opacity-100 transition-all duration-300 ease-out'
+                        : 'pointer-events-none fixed inset-x-0 bottom-0 z-50 flex translate-y-full justify-center opacity-0 transition-all duration-300 ease-out'
+                }
+            >
+                <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-background/95 px-4 py-2.5 shadow-lg backdrop-blur">
+                    <span className="text-xs font-medium text-muted-foreground">
+                        {count} item{count === 1 ? '' : 's'} selected
+                    </span>
+                    <div className="h-4 w-px bg-border" />
+                    <Button size="table" variant="secondary" onClick={onCopy}>
+                        <CopyIcon className="h-3.5 w-3.5" />
+                        Copy
+                    </Button>
+                    <Button size="table" variant="secondary" onClick={onMove}>
+                        <MoveRight className="h-3.5 w-3.5" />
+                        Move
+                    </Button>
+                    <Button
+                        size="table"
+                        variant="secondary"
+                        onClick={onPermissions}
+                    >
+                        <Shield className="h-3.5 w-3.5" />
+                        Permissions
+                    </Button>
+                    <Button
+                        size="table"
+                        variant="secondary"
+                        onClick={onArchive}
+                    >
+                        <Archive className="h-3.5 w-3.5" />
+                        Archive
+                    </Button>
+                    <Button size="table" variant="destructive" onClick={onDelete}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                    </Button>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </>
+    );
+}
+
+function UploadProgressCard({ items }: { items: UploadItemState[] }) {
+    if (items.length === 0) {
+        return null;
+    }
+
+    const progress = overallUploadProgress(items);
+    const completedCount = items.filter(
+        (item) => item.status === 'complete',
+    ).length;
+    const hasFailures = items.some((item) => item.status === 'error');
+
+    return (
+        <div className="mb-5 overflow-hidden rounded-lg bg-muted/40">
+            <div className="px-4 py-2.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                    Upload queue
+                </span>
+            </div>
+            <div className="rounded-lg border border-border/70 bg-background p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-sm font-medium text-foreground">
+                            {hasFailures
+                                ? 'Uploads finished with errors'
+                                : completedCount === items.length
+                                  ? 'Uploads complete'
+                                  : 'Uploading files...'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {completedCount} of {items.length} complete · {progress}% overall
+                        </p>
+                    </div>
+                    <div className="w-full max-w-xs">
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                            <div
+                                className="h-full rounded-full bg-[#d92400] transition-all duration-200"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                    {items.map((item) => (
+                        <div
+                            key={item.name}
+                            className="rounded-md border border-border/70 px-3 py-2"
+                        >
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-foreground">
+                                        {item.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {formatBytes(item.size)}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    {item.status === 'uploading' ? <Spinner /> : null}
+                                    {item.status === 'complete' ? (
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    ) : null}
+                                    {item.status === 'error' ? (
+                                        <XCircle className="h-4 w-4 text-destructive" />
+                                    ) : null}
+                                    <span>{item.progress}%</span>
+                                </div>
+                            </div>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                                <div
+                                    className={
+                                        item.status === 'error'
+                                            ? 'h-full rounded-full bg-destructive transition-all duration-200'
+                                            : 'h-full rounded-full bg-[#d92400] transition-all duration-200'
+                                    }
+                                    style={{ width: `${item.progress}%` }}
+                                />
+                            </div>
+                            {item.error ? (
+                                <p className="mt-2 text-xs text-destructive">
+                                    {item.error}
+                                </p>
+                            ) : null}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+async function uploadWithProgress(
+    url: string,
+    formData: FormData,
+    onProgress: (progress: number) => void,
+): Promise<MutationErrorPayload> {
+    return new Promise((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        request.open('POST', url, true);
+        request.responseType = 'json';
+        request.setRequestHeader('Accept', 'application/json');
+        request.setRequestHeader('X-CSRF-TOKEN', csrfToken());
+        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        request.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                onProgress(Math.max(1, Math.round((event.loaded / event.total) * 100)));
+            }
+        };
+
+        request.onerror = () => {
+            reject(new Error('The file could not be uploaded.'));
+        };
+
+        request.onload = () => {
+            const payload = (request.response ?? null) as MutationErrorPayload | null;
+
+            if (request.status >= 200 && request.status < 300) {
+                onProgress(100);
+                resolve(payload ?? {});
+
+                return;
+            }
+
+            reject(
+                new Error(
+                    payload?.errors
+                        ? Object.values(payload.errors)[0]?.[0] ??
+                              payload.message ??
+                              'The file could not be uploaded.'
+                        : payload?.message ?? 'The file could not be uploaded.',
+                ),
+            );
+        };
+
+        request.send(formData);
+    });
 }
 
 export default function ServerFiles({
@@ -321,7 +581,7 @@ export default function ServerFiles({
     const [extractState, setExtractState] = useState<ExtractState>(null);
     const [extractError, setExtractError] = useState<string | null>(null);
     const [mutationProcessing, setMutationProcessing] = useState(false);
-    const [uploadingNames, setUploadingNames] = useState<string[]>([]);
+    const [uploadItems, setUploadItems] = useState<UploadItemState[]>([]);
     const currentPath = directory?.path ?? '';
     const parentPath = directory?.parent_path ?? null;
     const selectedPathList = useMemo(
@@ -409,21 +669,11 @@ export default function ServerFiles({
     const requestMutation = async (
         url: string,
         method: 'DELETE' | 'PATCH' | 'POST' | 'PUT',
-        payload: FormData | Record<string, unknown>,
-    ): Promise<{ message?: string }> => {
+        payload: Record<string, unknown>,
+    ): Promise<MutationErrorPayload> => {
         const response = await fetch(url, {
-            body:
-                payload instanceof FormData
-                    ? payload
-                    : JSON.stringify(payload),
-            headers:
-                payload instanceof FormData
-                    ? {
-                          Accept: 'application/json',
-                          'X-CSRF-TOKEN': csrfToken(),
-                          'X-Requested-With': 'XMLHttpRequest',
-                      }
-                    : mutationHeaders,
+            body: JSON.stringify(payload),
+            headers: mutationHeaders,
             method,
         });
         const json = await parseJson<MutationErrorPayload>(response);
@@ -431,8 +681,8 @@ export default function ServerFiles({
         if (!response.ok) {
             throw new Error(
                 json?.errors
-                    ? Object.values(json.errors)[0]?.[0] ||
-                          json.message ||
+                    ? Object.values(json.errors)[0]?.[0] ??
+                          json.message ??
                           'The request could not be completed.'
                     : json?.message || 'The request could not be completed.',
             );
@@ -520,7 +770,7 @@ export default function ServerFiles({
     const createEntry = async (
         endpoint: string,
         state: CreateEntryState,
-        setState: React.Dispatch<React.SetStateAction<CreateEntryState>>,
+        setState: Dispatch<SetStateAction<CreateEntryState>>,
         close: () => void,
     ): Promise<void> => {
         try {
@@ -611,7 +861,9 @@ export default function ServerFiles({
 
         try {
             const endpoint =
-                transferState.mode === 'copy' ? copy.url(server.id) : move.url(server.id);
+                transferState.mode === 'copy'
+                    ? copy.url(server.id)
+                    : move.url(server.id);
             const payload = await requestMutation(endpoint, 'POST', {
                 destination: transferState.destination,
                 paths: transferState.paths,
@@ -681,7 +933,7 @@ export default function ServerFiles({
         try {
             const payload = await requestMutation(archive.url(server.id), 'POST', {
                 name: archiveState.name,
-                path: archiveState.path,
+                path: archiveState.destination,
                 paths: archiveState.paths,
             });
 
@@ -734,36 +986,85 @@ export default function ServerFiles({
             return;
         }
 
-        const names = Array.from(files).map((file) => file.name);
-        setUploadingNames(names);
+        const nextUploadItems = Array.from(files).map((file) => ({
+            name: file.name,
+            progress: 0,
+            size: file.size,
+            status: 'pending' as const,
+        }));
+        setUploadItems(nextUploadItems);
 
-        try {
-            for (const file of Array.from(files)) {
-                const formData = new FormData();
-                formData.append('path', currentPath);
-                formData.append('file', file);
+        let successCount = 0;
 
-                const payload = await requestMutation(
+        for (const [index, file] of Array.from(files).entries()) {
+            setUploadItems((current) =>
+                current.map((item, itemIndex) =>
+                    itemIndex === index
+                        ? { ...item, progress: 1, status: 'uploading' }
+                        : item,
+                ),
+            );
+
+            const formData = new FormData();
+            formData.append('path', currentPath);
+            formData.append('file', file);
+
+            try {
+                await uploadWithProgress(
                     upload.url(server.id),
-                    'POST',
                     formData,
+                    (progress) => {
+                        setUploadItems((current) =>
+                            current.map((item, itemIndex) =>
+                                itemIndex === index
+                                    ? {
+                                          ...item,
+                                          progress,
+                                          status: 'uploading',
+                                      }
+                                    : item,
+                            ),
+                        );
+                    },
                 );
 
-                toast.success(payload.message || `${file.name} uploaded successfully.`);
+                setUploadItems((current) =>
+                    current.map((item, itemIndex) =>
+                        itemIndex === index
+                            ? { ...item, progress: 100, status: 'complete' }
+                            : item,
+                    ),
+                );
+                successCount += 1;
+            } catch (error) {
+                setUploadItems((current) =>
+                    current.map((item, itemIndex) =>
+                        itemIndex === index
+                            ? {
+                                  ...item,
+                                  error:
+                                      error instanceof Error
+                                          ? error.message
+                                          : 'The file could not be uploaded.',
+                                  status: 'error',
+                              }
+                            : item,
+                    ),
+                );
             }
+        }
 
-            reloadDirectory();
-        } catch (error) {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : 'One or more files could not be uploaded.',
+        if (successCount > 0) {
+            toast.success(
+                successCount === 1
+                    ? '1 file uploaded successfully.'
+                    : `${successCount} files uploaded successfully.`,
             );
-        } finally {
-            setUploadingNames([]);
-            if (uploadInputRef.current) {
-                uploadInputRef.current.value = '';
-            }
+            reloadDirectory();
+        }
+
+        if (uploadInputRef.current) {
+            uploadInputRef.current.value = '';
         }
     };
 
@@ -774,7 +1075,7 @@ export default function ServerFiles({
             render: (entry) => (
                 <div className="flex min-w-0 items-center gap-3">
                     <div
-                        className="flex shrink-0 items-center"
+                        className="mr-0.5 flex items-center"
                         onClick={(event) => event.stopPropagation()}
                     >
                         <Checkbox
@@ -837,310 +1138,259 @@ export default function ServerFiles({
             <div className="px-4 py-6">
                 <Heading
                     title="Files"
-                    description="Manage files, folders, uploads, archives, and permissions inside your server container."
+                    description="Browse, upload, edit, archive, and organize files inside your server container."
                 />
 
-                <div className="space-y-6">
-                    <PathBar currentPath={currentPath} onNavigate={navigateTo} />
+                <InlinePathSummary
+                    currentPath={currentPath}
+                    itemCount={directory?.entries.length ?? 0}
+                    onNavigate={navigateTo}
+                />
 
-                    {directoryError ? (
-                        <Alert className="border-[#d92400]/20 bg-[#d92400]/6">
-                            <AlertCircle className="text-[#d92400]" />
-                            <AlertTitle>Unable to load this directory</AlertTitle>
-                            <AlertDescription>{directoryError}</AlertDescription>
-                        </Alert>
-                    ) : null}
+                {directoryError ? (
+                    <Alert className="mb-6 border-[#d92400]/20 bg-[#d92400]/6">
+                        <AlertCircle className="text-[#d92400]" />
+                        <AlertTitle>Unable to load this directory</AlertTitle>
+                        <AlertDescription>{directoryError}</AlertDescription>
+                    </Alert>
+                ) : null}
 
-                    <div className="rounded-md bg-sidebar p-1">
-                        <div className="rounded-md border border-sidebar-accent bg-background p-4 sm:p-6">
-                            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <h2 className="text-sm font-semibold text-foreground">
-                                        {pathLabel(currentPath)}
-                                    </h2>
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        {directory?.entries.length ?? 0} items in this directory.
-                                    </p>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {parentPath !== null ? (
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() => navigateTo(parentPath)}
-                                        >
-                                            <FolderUp />
-                                            Up
-                                        </Button>
-                                    ) : null}
-                                    <Button
-                                        variant="secondary"
-                                        onClick={reloadDirectory}
-                                        disabled={refreshing}
-                                    >
-                                        {refreshing ? <Spinner /> : <RefreshCw />}
-                                        Refresh
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() => uploadInputRef.current?.click()}
-                                        disabled={uploadingNames.length > 0}
-                                    >
-                                        {uploadingNames.length > 0 ? <Spinner /> : <Upload />}
-                                        Upload
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() => setCreateDirectoryOpen(true)}
-                                    >
-                                        <FolderPlus />
-                                        New Folder
-                                    </Button>
-                                    <Button onClick={() => setCreateFileOpen(true)}>
-                                        <Plus />
-                                        New File
-                                    </Button>
-                                </div>
-                            </div>
+                <UploadProgressCard items={uploadItems} />
 
-                            {selectedPathList.length > 0 ? (
-                                <div className="mb-4 flex flex-col gap-3 rounded-lg border border-border/70 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">
-                                            {selectedPathList.length} item{selectedPathList.length === 1 ? '' : 's'} selected
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Move, copy, archive, change permissions, or delete multiple items at once.
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() =>
-                                                setTransferState({
+                <DataTable
+                    data={fileTable}
+                    columns={columns}
+                    searchValue={search}
+                    onSearch={setSearch}
+                    selectable={false}
+                    entityName="item"
+                    emptyMessage="This directory is empty"
+                    emptySearchMessage="Try another file name or clear your search."
+                    onRowClick={(entry) => void openEntry(entry)}
+                    rowMenu={(entry) => (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all duration-150 ease-out hover:bg-muted hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
+                                >
+                                    <Ellipsis className="h-4 w-4" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() => void openEntry(entry)}
+                                >
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    {entry.kind === 'directory' ? 'Open' : 'Edit'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                        setRenameState({
+                                            name: entry.name,
+                                            path: entry.path,
+                                        })
+                                    }
+                                >
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                        setTransferState({
+                                            destination: currentPath,
+                                            mode: 'copy',
+                                            paths: [entry.path],
+                                        })
+                                    }
+                                >
+                                    <CopyIcon className="mr-2 h-4 w-4" />
+                                    Copy to...
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                        setTransferState({
+                                            destination: currentPath,
+                                            mode: 'move',
+                                            paths: [entry.path],
+                                        })
+                                    }
+                                >
+                                    <MoveRight className="mr-2 h-4 w-4" />
+                                    Move to...
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                        setPermissionsState({
+                                            paths: [entry.path],
+                                            permissions: entry.permissions ?? '644',
+                                        })
+                                    }
+                                >
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    Permissions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                        setArchiveState({
+                                            destination: currentPath,
+                                            name: defaultArchiveName([entry.path]),
+                                            paths: [entry.path],
+                                        })
+                                    }
+                                >
+                                    <Archive className="mr-2 h-4 w-4" />
+                                    Archive
+                                </DropdownMenuItem>
+                                {isArchive(entry) ? (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className="cursor-pointer"
+                                            onSelect={() =>
+                                                setExtractState({
                                                     destination: currentPath,
-                                                    mode: 'copy',
-                                                    paths: selectedPathList,
+                                                    path: entry.path,
                                                 })
                                             }
                                         >
-                                            <Copy />
-                                            Copy
-                                        </Button>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() =>
-                                                setTransferState({
-                                                    destination: currentPath,
-                                                    mode: 'move',
-                                                    paths: selectedPathList,
-                                                })
-                                            }
-                                        >
-                                            <MoveRight />
-                                            Move
-                                        </Button>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() =>
-                                                setPermissionsState({
-                                                    paths: selectedPathList,
-                                                    permissions:
-                                                        directory?.entries.find((entry) =>
-                                                            entry.path ===
-                                                            selectedPathList[0],
-                                                        )?.permissions ?? '644',
-                                                })
-                                            }
-                                        >
-                                            <Shield />
-                                            Permissions
-                                        </Button>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={() =>
-                                                setArchiveState({
-                                                    name: defaultArchiveName(
-                                                        selectedPathList,
-                                                    ),
-                                                    path: currentPath,
-                                                    paths: selectedPathList,
-                                                })
-                                            }
-                                        >
-                                            <Archive />
-                                            Archive
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            onClick={() =>
-                                                setPendingDeletePaths(selectedPathList)
-                                            }
-                                        >
-                                            <Trash2 />
-                                            Delete
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            onClick={clearSelection}
-                                        >
-                                            Clear
-                                        </Button>
-                                    </div>
-                                </div>
+                                            <WandSparkles className="mr-2 h-4 w-4" />
+                                            Extract...
+                                        </DropdownMenuItem>
+                                    </>
+                                ) : null}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                        setPendingDeletePaths([entry.path])
+                                    }
+                                    variant="destructive"
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                    actions={
+                        <>
+                            {parentPath !== null ? (
+                                <Button
+                                    size="table"
+                                    variant="secondary"
+                                    onClick={() => navigateTo(parentPath)}
+                                >
+                                    <FolderUp className="h-3.5 w-3.5" />
+                                    Up
+                                </Button>
                             ) : null}
-
-                            {uploadingNames.length > 0 ? (
-                                <div className="mb-4 flex items-center gap-3 rounded-lg border border-border/70 bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
+                            <Button
+                                size="table"
+                                variant="secondary"
+                                onClick={reloadDirectory}
+                                disabled={refreshing}
+                            >
+                                {refreshing ? (
                                     <Spinner />
-                                    Uploading {uploadingNames.join(', ')}...
-                                </div>
-                            ) : null}
-
-                            <input
-                                ref={uploadInputRef}
-                                type="file"
-                                multiple
-                                className="hidden"
-                                onChange={(event) =>
-                                    void uploadFiles(event.target.files)
-                                }
-                            />
-
-                            <DataTable
-                                data={fileTable}
-                                columns={columns}
-                                searchValue={search}
-                                onSearch={setSearch}
-                                selectable={false}
-                                emptyMessage="This directory is empty"
-                                emptySearchMessage="Try another file name or clear your search."
-                                entityName="item"
-                                onRowClick={(entry) => void openEntry(entry)}
-                                rowMenu={(entry) => (
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                                <Ellipsis className="size-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                onClick={() => void openEntry(entry)}
-                                            >
-                                                <Pencil className="size-4" />
-                                                {entry.kind === 'directory'
-                                                    ? 'Open'
-                                                    : 'Edit'}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    setRenameState({
-                                                        name: entry.name,
-                                                        path: entry.path,
-                                                    })
-                                                }
-                                            >
-                                                <Pencil className="size-4" />
-                                                Rename
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    setTransferState({
-                                                        destination: currentPath,
-                                                        mode: 'copy',
-                                                        paths: [entry.path],
-                                                    })
-                                                }
-                                            >
-                                                <Copy className="size-4" />
-                                                Copy to...
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    setTransferState({
-                                                        destination: currentPath,
-                                                        mode: 'move',
-                                                        paths: [entry.path],
-                                                    })
-                                                }
-                                            >
-                                                <MoveRight className="size-4" />
-                                                Move to...
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    setPermissionsState({
-                                                        paths: [entry.path],
-                                                        permissions:
-                                                            entry.permissions ?? '644',
-                                                    })
-                                                }
-                                            >
-                                                <Shield className="size-4" />
-                                                Permissions
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    setArchiveState({
-                                                        name: `${entry.name}.zip`,
-                                                        path: currentPath,
-                                                        paths: [entry.path],
-                                                    })
-                                                }
-                                            >
-                                                <Archive className="size-4" />
-                                                Archive
-                                            </DropdownMenuItem>
-                                            {isArchive(entry) ? (
-                                                <>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            setExtractState({
-                                                                destination:
-                                                                    currentPath,
-                                                                path: entry.path,
-                                                            })
-                                                        }
-                                                    >
-                                                        <WandSparkles className="size-4" />
-                                                        Extract here
-                                                    </DropdownMenuItem>
-                                                </>
-                                            ) : null}
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    setPendingDeletePaths([entry.path])
-                                                }
-                                                variant="destructive"
-                                            >
-                                                <Trash2 className="size-4" />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                ) : (
+                                    <RefreshCw className="h-3.5 w-3.5" />
                                 )}
-                            />
-                        </div>
-                    </div>
-                </div>
+                                Refresh
+                            </Button>
+                            <Button
+                                size="table"
+                                variant="secondary"
+                                onClick={() => uploadInputRef.current?.click()}
+                            >
+                                <Upload className="h-3.5 w-3.5" />
+                                Upload
+                            </Button>
+                            <Button
+                                size="table"
+                                variant="secondary"
+                                onClick={() => setCreateDirectoryOpen(true)}
+                            >
+                                <FolderPlus className="h-3.5 w-3.5" />
+                                New folder
+                            </Button>
+                            <Button
+                                size="table"
+                                onClick={() => setCreateFileOpen(true)}
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                New file
+                            </Button>
+                        </>
+                    }
+                />
+
+                <input
+                    ref={uploadInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(event) => void uploadFiles(event.target.files)}
+                />
             </div>
+
+            <FilesBulkActionBar
+                count={selectedPathList.length}
+                onArchive={() =>
+                    setArchiveState({
+                        destination: currentPath,
+                        name: defaultArchiveName(selectedPathList),
+                        paths: selectedPathList,
+                    })
+                }
+                onCancel={clearSelection}
+                onCopy={() =>
+                    setTransferState({
+                        destination: currentPath,
+                        mode: 'copy',
+                        paths: selectedPathList,
+                    })
+                }
+                onDelete={() => setPendingDeletePaths(selectedPathList)}
+                onMove={() =>
+                    setTransferState({
+                        destination: currentPath,
+                        mode: 'move',
+                        paths: selectedPathList,
+                    })
+                }
+                onPermissions={() =>
+                    setPermissionsState({
+                        paths: selectedPathList,
+                        permissions:
+                            directory?.entries.find(
+                                (entry) => entry.path === selectedPathList[0],
+                            )?.permissions ?? '644',
+                    })
+                }
+            />
 
             <Dialog open={createFileOpen} onOpenChange={setCreateFileOpen}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Create File</DialogTitle>
                         <DialogDescription>
-                            This file will be created as{' '}
-                            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
-                                {`${pathLabel(currentPath)}/${createFileState.name || 'new-file.txt'}`}
+                            Add a new text file in{' '}
+                            <span className="font-mono text-xs text-foreground">
+                                {pathLabel(currentPath)}
                             </span>
+                            .
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="new-file-name">Name</Label>
+                            <Label htmlFor="new-file-name">File name</Label>
                             <Input
                                 id="new-file-name"
                                 value={createFileState.name}
@@ -1153,6 +1403,12 @@ export default function ServerFiles({
                                 placeholder="server.properties"
                             />
                             <InputError message={createFileState.errors.name} />
+                        </div>
+                        <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                            Created at{' '}
+                            <span className="font-mono text-foreground">
+                                {`${pathLabel(currentPath)}/${createFileState.name || 'new-file.txt'}`}
+                            </span>
                         </div>
                         <div className="flex justify-end gap-2">
                             <Button
@@ -1171,7 +1427,7 @@ export default function ServerFiles({
                                     )
                                 }
                             >
-                                Create File
+                                Create file
                             </Button>
                         </div>
                     </div>
@@ -1184,17 +1440,18 @@ export default function ServerFiles({
             >
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Create Directory</DialogTitle>
+                        <DialogTitle>Create Folder</DialogTitle>
                         <DialogDescription>
-                            This directory will be created as{' '}
-                            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
-                                {`${pathLabel(currentPath)}/${createDirectoryState.name || 'new-folder'}`}
+                            Add a new folder in{' '}
+                            <span className="font-mono text-xs text-foreground">
+                                {pathLabel(currentPath)}
                             </span>
+                            .
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="new-directory-name">Name</Label>
+                            <Label htmlFor="new-directory-name">Folder name</Label>
                             <Input
                                 id="new-directory-name"
                                 value={createDirectoryState.name}
@@ -1209,6 +1466,12 @@ export default function ServerFiles({
                             <InputError
                                 message={createDirectoryState.errors.name}
                             />
+                        </div>
+                        <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                            Created at{' '}
+                            <span className="font-mono text-foreground">
+                                {`${pathLabel(currentPath)}/${createDirectoryState.name || 'new-folder'}`}
+                            </span>
                         </div>
                         <div className="flex justify-end gap-2">
                             <Button
@@ -1227,7 +1490,7 @@ export default function ServerFiles({
                                     )
                                 }
                             >
-                                Create Directory
+                                Create folder
                             </Button>
                         </div>
                     </div>
@@ -1242,7 +1505,7 @@ export default function ServerFiles({
                     <DialogHeader>
                         <DialogTitle>Rename Item</DialogTitle>
                         <DialogDescription>
-                            Update the file or directory name without moving it.
+                            Change the name without moving this file or folder.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -1277,7 +1540,7 @@ export default function ServerFiles({
                                 disabled={mutationProcessing || renameState === null}
                             >
                                 {mutationProcessing && <Spinner />}
-                                Rename
+                                Rename item
                             </Button>
                         </div>
                     </div>
@@ -1291,10 +1554,12 @@ export default function ServerFiles({
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>
-                            {transferState?.mode === 'copy' ? 'Copy Items' : 'Move Items'}
+                            {transferState?.mode === 'copy'
+                                ? 'Copy Items'
+                                : 'Move Items'}
                         </DialogTitle>
                         <DialogDescription>
-                            Enter the destination directory relative to{' '}
+                            Choose a destination relative to{' '}
                             <span className="font-mono text-xs text-foreground">
                                 /home/container
                             </span>
@@ -1321,9 +1586,15 @@ export default function ServerFiles({
                                             : current,
                                     );
                                 }}
-                                placeholder="plugins"
+                                placeholder="plugins/backups"
                             />
                             <InputError message={transferError ?? undefined} />
+                        </div>
+                        <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                            {transferState?.paths.length ?? 0} selected item
+                            {(transferState?.paths.length ?? 0) === 1 ? '' : 's'}
+                            {' '}will be{' '}
+                            {transferState?.mode === 'copy' ? 'copied' : 'moved'}.
                         </div>
                         <div className="flex justify-end gap-2">
                             <Button
@@ -1337,7 +1608,9 @@ export default function ServerFiles({
                                 disabled={mutationProcessing || transferState === null}
                             >
                                 {mutationProcessing && <Spinner />}
-                                {transferState?.mode === 'copy' ? 'Copy' : 'Move'}
+                                {transferState?.mode === 'copy'
+                                    ? 'Copy items'
+                                    : 'Move items'}
                             </Button>
                         </div>
                     </div>
@@ -1352,7 +1625,7 @@ export default function ServerFiles({
                     <DialogHeader>
                         <DialogTitle>Change Permissions</DialogTitle>
                         <DialogDescription>
-                            Enter a mode such as 644 or 755.
+                            Enter an octal mode such as 644 for files or 755 for executable folders.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -1375,7 +1648,9 @@ export default function ServerFiles({
                                 }}
                                 placeholder="644"
                             />
-                            <InputError message={permissionsError ?? undefined} />
+                            <InputError
+                                message={permissionsError ?? undefined}
+                            />
                         </div>
                         <div className="flex justify-end gap-2">
                             <Button
@@ -1392,7 +1667,7 @@ export default function ServerFiles({
                                 }
                             >
                                 {mutationProcessing && <Spinner />}
-                                Save Permissions
+                                Save permissions
                             </Button>
                         </div>
                     </div>
@@ -1407,7 +1682,7 @@ export default function ServerFiles({
                     <DialogHeader>
                         <DialogTitle>Create Archive</DialogTitle>
                         <DialogDescription>
-                            Bundle the selected items into a zip archive.
+                            Pack the selected files and folders into a zip archive.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -1427,28 +1702,38 @@ export default function ServerFiles({
                                             : current,
                                     );
                                 }}
-                                placeholder="archive.zip"
+                                placeholder="plugins.zip"
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="archive-path">Save to directory</Label>
+                            <Label htmlFor="archive-destination">
+                                Save to directory
+                            </Label>
                             <Input
-                                id="archive-path"
-                                value={archiveState?.path ?? ''}
+                                id="archive-destination"
+                                value={archiveState?.destination ?? ''}
                                 onChange={(event) => {
                                     setArchiveError(null);
                                     setArchiveState((current) =>
                                         current
                                             ? {
                                                   ...current,
-                                                  path: event.target.value,
+                                                  destination:
+                                                      event.target.value,
                                               }
                                             : current,
                                     );
                                 }}
-                                placeholder="plugins"
+                                placeholder="backups"
                             />
                             <InputError message={archiveError ?? undefined} />
+                        </div>
+                        <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                            The archive will be created in{' '}
+                            <span className="font-mono text-foreground">
+                                {pathLabel(archiveState?.destination ?? '')}
+                            </span>
+                            .
                         </div>
                         <div className="flex justify-end gap-2">
                             <Button
@@ -1462,7 +1747,7 @@ export default function ServerFiles({
                                 disabled={mutationProcessing || archiveState === null}
                             >
                                 {mutationProcessing && <Spinner />}
-                                Create Archive
+                                Create archive
                             </Button>
                         </div>
                     </div>
@@ -1477,8 +1762,11 @@ export default function ServerFiles({
                     <DialogHeader>
                         <DialogTitle>Extract Archive</DialogTitle>
                         <DialogDescription>
-                            Choose where this archive should be extracted. Leave it
-                            empty to extract into the server root.
+                            Extract this archive into a destination directory relative to{' '}
+                            <span className="font-mono text-xs text-foreground">
+                                /home/container
+                            </span>
+                            .
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -1505,6 +1793,12 @@ export default function ServerFiles({
                             />
                             <InputError message={extractError ?? undefined} />
                         </div>
+                        <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                            Archive:{' '}
+                            <span className="font-mono text-foreground">
+                                {pathLabel(extractState?.path ?? '')}
+                            </span>
+                        </div>
                         <div className="flex justify-end gap-2">
                             <Button
                                 variant="secondary"
@@ -1517,7 +1811,7 @@ export default function ServerFiles({
                                 disabled={mutationProcessing || extractState === null}
                             >
                                 {mutationProcessing && <Spinner />}
-                                Extract Archive
+                                Extract archive
                             </Button>
                         </div>
                     </div>
@@ -1548,21 +1842,25 @@ export default function ServerFiles({
                                 </span>
                             ) : null}
                             {editorState ? (
-                                <span>{formatBytes(editorState.size_bytes)}</span>
+                                <span>
+                                    {detectEditorLanguage(editorState.path)} ·{' '}
+                                    {formatBytes(editorState.size_bytes)}
+                                </span>
                             ) : null}
                         </div>
                     </div>
                     <div className="px-8 py-6">
-                        <textarea
-                            value={editorValue}
-                            onChange={(event) => setEditorValue(event.target.value)}
-                            className="min-h-[60vh] w-full rounded-lg border border-input bg-background px-4 py-3 font-mono text-sm text-foreground outline-hidden ring-offset-background placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                            spellCheck={false}
-                        />
+                        {editorState ? (
+                            <CodeEditor
+                                path={editorState.path}
+                                value={editorValue}
+                                onChange={setEditorValue}
+                            />
+                        ) : null}
                     </div>
                     <div className="flex items-center justify-between border-t border-border/70 px-8 py-5">
                         <p className="text-sm text-muted-foreground">
-                            Save changes to write this file back into the server volume.
+                            Syntax highlighting is detected automatically from the file name.
                         </p>
                         <div className="flex items-center gap-2">
                             <Button
@@ -1579,7 +1877,7 @@ export default function ServerFiles({
                                 disabled={savingFile || editorState === null}
                             >
                                 {savingFile && <Spinner />}
-                                Save Content
+                                Save content
                             </Button>
                         </div>
                     </div>
