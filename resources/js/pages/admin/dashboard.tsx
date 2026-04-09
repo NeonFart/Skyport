@@ -238,7 +238,7 @@ export default function AdminDashboard({
 
             <AdminLayout
                 title="Overview"
-                description="Monitor platform activity and resource usage."
+                description="A quick overview of the system."
             >
                 <div className="flex flex-1 flex-col gap-4 overflow-x-auto">
                     <div className="flex flex-1 rounded-md bg-sidebar p-1">
@@ -246,74 +246,21 @@ export default function AdminDashboard({
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
                                     <h2 className="text-sm font-semibold text-foreground">
-                                        Panel build details
+                                        Skyport Panel
                                     </h2>
                                     <p className="mt-1 text-xs text-muted-foreground">
-                                        Running the current panel version from
-                                        this checkout.
+                                        Thank you for trying out Skyport! This is a <strong>very early</strong> release, so please report any issues you find.
                                     </p>
                                 </div>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="min-w-40 rounded-lg border border-sidebar-accent bg-background px-3 py-2">
-                                        <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                                            Version
-                                        </span>
+                                <div className="grid gap-3 sm:grid-cols-1 p-2">
+                                    <div className="min-w-40 rounded-lg">
                                         <p className="mt-1 font-mono text-sm font-medium text-foreground">
-                                            {version}
-                                        </p>
-                                    </div>
-                                    <div className="min-w-40 rounded-lg border border-sidebar-accent bg-background px-3 py-2">
-                                        <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                                            Commit
-                                        </span>
-                                        <p className="mt-1 font-mono text-sm font-medium text-foreground">
-                                            {commit}
+                                            skyportsh/panel @ v{version} ({commit})
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="grid auto-rows-min gap-4 lg:grid-cols-2">
-                        <ChartCard
-                            title="Recent user growth"
-                            subtitle="Last 30 days of registrations"
-                            total={recentUsersTotal}
-                            totalLabel={
-                                recentUsersTotal === 1
-                                    ? 'new account'
-                                    : 'new accounts'
-                            }
-                            data={recentUsers}
-                            tooltipUnit={
-                                recentUsersTotal === 1 ? 'user' : 'users'
-                            }
-                            color="#0ea5e9"
-                            gradientId="adminUserGradient"
-                            footerText={usersTrendText}
-                            footerLink={adminUsers.url()}
-                            footerLinkLabel="Manage users"
-                        />
-                        <ChartCard
-                            title="Server creation"
-                            subtitle="Last 30 days of new servers"
-                            total={recentServersTotal}
-                            totalLabel={
-                                recentServersTotal === 1
-                                    ? 'new server'
-                                    : 'new servers'
-                            }
-                            data={recentServers}
-                            tooltipUnit={
-                                recentServersTotal === 1 ? 'server' : 'servers'
-                            }
-                            color="#a855f7"
-                            gradientId="adminServerGradient"
-                            footerText={serversTrendText}
-                            footerLink={adminServers.url()}
-                            footerLinkLabel="Manage servers"
-                        />
                     </div>
 
                     <div className="grid auto-rows-min gap-4 md:grid-cols-3">

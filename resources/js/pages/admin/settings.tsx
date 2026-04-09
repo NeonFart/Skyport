@@ -215,7 +215,7 @@ export default function Settings({ settings }: Props) {
 
             <AdminLayout
                 title="Settings"
-                description="Manage panel-wide branding and announcements."
+                description="Manage general system settings for the panel."
             >
                 <div className="space-y-6">
                     <SlidingTabs
@@ -468,7 +468,7 @@ export default function Settings({ settings }: Props) {
                                                             event.target.value,
                                                         )
                                                     }
-                                                    placeholder="Scheduled maintenance on Friday at 10pm UTC..."
+                                                    placeholder="Scheduled maintenance at x..."
                                                     rows={3}
                                                     className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                                     maxLength={1000}

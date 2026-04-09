@@ -211,7 +211,7 @@ export default function Activity({ activities, filters }: Props) {
 
             <AdminLayout
                 title="Activity"
-                description="Platform-wide activity across all users."
+                description="A log of all activity across the panel."
             >
                 <DataTable
                     data={activities}

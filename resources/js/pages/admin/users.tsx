@@ -877,7 +877,7 @@ export default function Users({ users, filters }: Props) {
 
             <AdminLayout
                 title="Users"
-                description="Manage user accounts across the platform."
+                description="Manage user accounts across the system."
             >
                 <DataTable
                     data={users}

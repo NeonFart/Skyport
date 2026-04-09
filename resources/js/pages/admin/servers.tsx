@@ -684,7 +684,7 @@ function ServerModal({
                                         description={
                                             server.status === 'install_failed'
                                                 ? 'Download the install log or force a reinstall.'
-                                                : 'Daemon lifecycle status'
+                                                : 'Last known state. It\'s possible that it may be wrong, especially if the daemon is offline.'
                                         }
                                         valueClassName={
                                             server.status === 'install_failed'
@@ -693,11 +693,6 @@ function ServerModal({
                                                   ? 'text-emerald-600 dark:text-emerald-400'
                                                   : undefined
                                         }
-                                    />
-                                    <StackedStatCard
-                                        label="Volume path"
-                                        value={`volumes/${server.id}`}
-                                        description="Planned server files location"
                                     />
                                 </div>
                             </div>
@@ -723,11 +718,11 @@ function ServerModal({
                                         className="pointer-events-none absolute inset-0 size-full stroke-current opacity-[0.08]"
                                     />
                                     <div className="relative">
-                                        Node and cargo cannot be changed after a
-                                        server is created. Resource updates are
+                                        Node and Cargo cannot be changed after a
+                                        server is created (at the moment!). Resource updates are
                                         applied immediately if the server is
                                         offline, or queued until the next
-                                        restart or start.
+                                        restart.
                                     </div>
                                 </div>
                                 <ServerFormFields
@@ -772,7 +767,7 @@ function ServerModal({
                                             </h3>
                                             <p className="mt-1 text-sm text-muted-foreground">
                                                 Delete the server files and run
-                                                the cargo installer again.
+                                                the Skyport Cargo installer again.
                                             </p>
                                         </div>
                                         <Button
@@ -795,8 +790,7 @@ function ServerModal({
                                                 Delete server
                                             </h3>
                                             <p className="mt-1 text-sm text-muted-foreground">
-                                                Permanently remove this server
-                                                record from the panel.
+                                                Permanently remove this server from the panel. If the daemon is down, the server will be force deleted from the panel but not from the node.
                                             </p>
                                         </div>
                                         <Button
