@@ -51,6 +51,20 @@ test('user can delete their account', function () {
     expect(UserActivity::query()->count())->toBe(0);
 });
 
+test('deleting an account does not record activity for a deleted user', function () {
+    $user = User::factory()->create();
+
+    $this
+        ->actingAs($user)
+        ->delete(route('profile.destroy'), [
+            'password' => 'password',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/');
+
+    expect($user->activities()->count())->toBe(0);
+});
+
 test('correct password must be provided to delete account', function () {
     $user = User::factory()->create();
 

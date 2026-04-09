@@ -71,7 +71,11 @@ test('server owner can view the console page', function () {
             ->where('server.allocation.port', 25565)
             ->where('server.allowed_actions.start', true)
             ->where('server.allowed_actions.reinstall', true)
-            ->where('server.allowed_actions.kill', false));
+            ->where('server.allowed_actions.kill', false)
+            ->has('serverSwitcher', 1)
+            ->where('serverSwitcher.0.id', $dependencies['server']->id)
+            ->where('serverSwitcher.0.name', 'Alpha')
+            ->where('serverSwitcher.0.status', 'offline'));
 });
 
 test('removed server filesystem page is not found', function () {
@@ -85,10 +89,29 @@ test('removed server filesystem page is not found', function () {
 test('admin can view the console page for any server', function () {
     $dependencies = serverConsoleDependencies();
     $admin = User::factory()->create(['is_admin' => true]);
+    $adminServer = Server::factory()->create([
+        'allocation_id' => Allocation::factory()->create([
+            'bind_ip' => '203.0.113.20',
+            'node_id' => $dependencies['server']->node_id,
+            'port' => 25566,
+        ])->id,
+        'cargo_id' => $dependencies['server']->cargo_id,
+        'name' => 'Admin Server',
+        'node_id' => $dependencies['server']->node_id,
+        'status' => 'running',
+        'user_id' => $admin->id,
+    ]);
 
     actingAs($admin);
 
-    get("/server/{$dependencies['server']->id}/console")->assertOk();
+    get("/server/{$dependencies['server']->id}/console")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('serverSwitcher', 2)
+            ->where('serverSwitcher.0.name', 'Admin Server')
+            ->where('serverSwitcher.0.id', $adminServer->id)
+            ->where('serverSwitcher.1.name', 'Alpha')
+            ->where('serverSwitcher.1.id', $dependencies['server']->id));
 });
 
 test('console page still renders when the primary allocation has been removed', function () {

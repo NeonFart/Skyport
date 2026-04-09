@@ -203,6 +203,7 @@ class ServersController extends Controller
             (int) $validated['allocation_id'],
             (int) $validated['node_id'],
         );
+        $this->ensureNodeIsOnline((int) $validated['node_id']);
 
         $server = Server::query()->create($validated + ['status' => 'installing']);
         $server->loadMissing(['cargo', 'node.credential', 'user']);
@@ -375,6 +376,17 @@ class ServersController extends Controller
             $allocation->server && $allocation->server->id !== $server?->id,
             422,
             'The selected allocation is already assigned to another server.',
+        );
+    }
+
+    private function ensureNodeIsOnline(int $nodeId): void
+    {
+        $node = Node::query()->findOrFail($nodeId);
+
+        abort_if(
+            ! $node->isOnline(),
+            422,
+            'The selected node is not online. Servers can only be created on nodes that are currently connected.',
         );
     }
 }

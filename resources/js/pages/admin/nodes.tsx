@@ -13,10 +13,10 @@ import {
     bulkDestroy,
     destroy,
     index as adminNodes,
-    configureToken as storeAllocation,
     store,
     update,
 } from '@/routes/admin/nodes';
+import { store as storeAllocation } from '@/routes/admin/nodes/allocations';
 import { ConfirmDeleteDialog, DataTable } from '@/components/admin/data-table';
 import type { Column, PaginatedData } from '@/components/admin/data-table';
 import { CountryFlagIcon, CountryFlagOption } from '@/components/country-flag';
@@ -640,7 +640,9 @@ function ConfigureTab({
                     credentials: 'same-origin',
                     headers: {
                         Accept: 'application/json',
+                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest',
                     },
                     method: 'POST',
                 },

@@ -178,6 +178,8 @@ test('admin can create a server and push it to skyportd', function () {
         'daemon_uuid' => '550e8400-e29b-41d4-a716-446655440000',
         'daemon_port' => 2800,
         'fqdn' => 'node.example.com',
+        'last_seen_at' => now(),
+        'status' => 'enrolled',
         'use_ssl' => false,
     ])->save();
     NodeCredential::factory()->create([

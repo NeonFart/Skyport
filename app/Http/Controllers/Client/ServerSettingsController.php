@@ -59,6 +59,7 @@ class ServerSettingsController extends Controller
                 'node' => [
                     'id' => $server->node->id,
                     'name' => $server->node->name,
+                    'online' => $server->node->isOnline(),
                 ],
                 'status' => $server->status,
             ],

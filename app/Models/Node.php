@@ -45,6 +45,25 @@ class Node extends Model
         return $this->hasMany(Allocation::class);
     }
 
+    public function isOnline(): bool
+    {
+        if ($this->status === 'draft' || $this->status === 'configured') {
+            return false;
+        }
+
+        return $this->last_seen_at !== null
+            && $this->last_seen_at->isAfter(now()->subSeconds(15));
+    }
+
+    public function connectionStatus(): string
+    {
+        if ($this->status === 'draft' || $this->status === 'configured') {
+            return $this->status;
+        }
+
+        return $this->isOnline() ? 'online' : 'offline';
+    }
+
     protected function casts(): array
     {
         return [

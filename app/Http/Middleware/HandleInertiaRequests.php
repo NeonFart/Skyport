@@ -2,9 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Server;
 use App\Models\User;
 use App\Services\AppSettingsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -67,7 +69,33 @@ class HandleInertiaRequests extends Middleware
             'announcementIcon' => fn (): string => app(
                 AppSettingsService::class,
             )->announcementIcon(),
+            'serverSwitcher' => fn (): array => $this->sharedServerSwitcher(
+                $request->user(),
+            ),
         ];
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, status: string}>
+     */
+    protected function sharedServerSwitcher(?User $user): array
+    {
+        if (! $user || ! Schema::hasTable('servers')) {
+            return [];
+        }
+
+        return ($user->is_admin ? Server::query() : $user->servers())
+            ->select(['id', 'name', 'status'])
+            ->orderBy('name')
+            ->get()
+            ->map(
+                fn (Server $server): array => [
+                    'id' => $server->id,
+                    'name' => $server->name,
+                    'status' => $server->status,
+                ],
+            )
+            ->all();
     }
 
     /**

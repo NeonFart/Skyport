@@ -11,7 +11,6 @@ use App\Models\Location;
 use App\Models\Node;
 use App\Services\NodeConfigurationService;
 use App\Services\NodeRemoteUpdateService;
-use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -218,17 +217,6 @@ class NodesController extends Controller
 
     private function connectionStatus(Node $node): string
     {
-        if ($node->status === 'draft' || $node->status === 'configured') {
-            return $node->status;
-        }
-
-        if (
-            $node->last_seen_at instanceof CarbonInterface &&
-            $node->last_seen_at->isAfter(now()->subSeconds(15))
-        ) {
-            return 'online';
-        }
-
-        return 'offline';
+        return $node->connectionStatus();
     }
 }
