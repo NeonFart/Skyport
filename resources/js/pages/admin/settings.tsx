@@ -84,6 +84,8 @@ type Props = {
         announcement_dismissable: boolean;
         announcement_icon: AnnouncementIcon;
         telemetry_enabled: boolean;
+        allocations_enabled: boolean;
+        allocations_limit: number;
     };
 };
 
@@ -95,6 +97,8 @@ type SettingsFormData = {
     announcement_dismissable: boolean;
     announcement_icon: AnnouncementIcon;
     telemetry_enabled: boolean;
+    allocations_enabled: boolean;
+    allocations_limit: number;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -106,6 +110,7 @@ const pageTabs: Tab[] = [
     { id: 'general', label: 'General' },
     { id: 'announcement', label: 'Announcement' },
     { id: 'telemetry', label: 'Telemetry' },
+    { id: 'features', label: 'Features' },
 ];
 
 const typeIcons: Record<AnnouncementType, typeof Info> = {
@@ -183,6 +188,8 @@ export default function Settings({ settings }: Props) {
         announcement_dismissable: settings.announcement_dismissable,
         announcement_icon: settings.announcement_icon,
         telemetry_enabled: settings.telemetry_enabled,
+        allocations_enabled: settings.allocations_enabled,
+        allocations_limit: settings.allocations_limit,
     });
     const minimumMs = 500;
     const submitStart = useRef(0);
@@ -600,6 +607,92 @@ export default function Settings({ settings }: Props) {
                                                         </p>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            submitting ||
+                                            form.processing ||
+                                            !form.isDirty
+                                        }
+                                    >
+                                        {(submitting || form.processing) && (
+                                            <Spinner />
+                                        )}
+                                        Save
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                        {tab === 'features' && (
+                            <div className="space-y-4">
+                                <div className="rounded-md bg-sidebar p-1">
+                                    <div className="rounded-md border border-sidebar-accent bg-background p-6">
+                                        <div className="flex items-center justify-between">
+                                            <Heading
+                                                variant="small"
+                                                title="Extra allocations"
+                                                description="Allow users to create additional port allocations on their servers."
+                                            />
+                                            <Switch
+                                                checked={
+                                                    form.data
+                                                        .allocations_enabled
+                                                }
+                                                onCheckedChange={(checked) =>
+                                                    form.setData(
+                                                        'allocations_enabled',
+                                                        checked,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+
+                                        <div className="mt-6 max-w-md space-y-4">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="allocations-limit">
+                                                    Maximum extra allocations
+                                                    per server
+                                                </Label>
+                                                <Input
+                                                    id="allocations-limit"
+                                                    type="number"
+                                                    min={0}
+                                                    max={100}
+                                                    value={
+                                                        form.data
+                                                            .allocations_limit
+                                                    }
+                                                    onChange={(event) =>
+                                                        form.setData(
+                                                            'allocations_limit',
+                                                            parseInt(
+                                                                event.target
+                                                                    .value,
+                                                            ) || 0,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        !form.data
+                                                            .allocations_enabled
+                                                    }
+                                                />
+                                                <InputError
+                                                    message={
+                                                        form.errors
+                                                            .allocations_limit
+                                                    }
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    This does not include the
+                                                    primary allocation assigned
+                                                    during server creation.
+                                                </p>
                                             </div>
                                         </div>
                                     </div>

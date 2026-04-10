@@ -21,6 +21,10 @@ class AppSettingsService
 
     public const TELEMETRY_ENABLED_KEY = 'telemetry_enabled';
 
+    public const ALLOCATIONS_ENABLED_KEY = 'allocations_enabled';
+
+    public const ALLOCATIONS_LIMIT_KEY = 'allocations_limit';
+
     /**
      * @return list<string>
      */
@@ -185,6 +189,46 @@ class AppSettingsService
         AppSetting::query()->updateOrCreate(
             ['key' => self::TELEMETRY_ENABLED_KEY],
             ['value' => $enabled ? '1' : '0'],
+        );
+    }
+
+    public function allocationsEnabled(): bool
+    {
+        if (! Schema::hasTable('app_settings')) {
+            return false;
+        }
+
+        return AppSetting::query()
+            ->where('key', self::ALLOCATIONS_ENABLED_KEY)
+            ->value('value') === '1';
+    }
+
+    public function setAllocationsEnabled(bool $enabled): void
+    {
+        AppSetting::query()->updateOrCreate(
+            ['key' => self::ALLOCATIONS_ENABLED_KEY],
+            ['value' => $enabled ? '1' : '0'],
+        );
+    }
+
+    public function allocationsLimit(): int
+    {
+        if (! Schema::hasTable('app_settings')) {
+            return 0;
+        }
+
+        $value = AppSetting::query()
+            ->where('key', self::ALLOCATIONS_LIMIT_KEY)
+            ->value('value');
+
+        return $value !== null ? max(0, (int) $value) : 0;
+    }
+
+    public function setAllocationsLimit(int $limit): void
+    {
+        AppSetting::query()->updateOrCreate(
+            ['key' => self::ALLOCATIONS_LIMIT_KEY],
+            ['value' => (string) max(0, $limit)],
         );
     }
 

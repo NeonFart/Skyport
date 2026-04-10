@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Auth\PasskeyAuthenticationController;
+use App\Http\Controllers\Client\ServerAllocationsController;
 use App\Http\Controllers\Client\ServerConsoleController;
 use App\Http\Controllers\Client\ServerFilesController;
+use App\Http\Controllers\Client\ServerFirewallController;
 use App\Http\Controllers\Client\ServerPowerController;
 use App\Http\Controllers\Client\ServerSettingsController;
 use App\Http\Controllers\Client\ServerWebsocketController;
@@ -53,6 +55,34 @@ Route::middleware(['auth'])->group(function () {
         ServerSettingsController::class,
         'updateStartup',
     ])->name('client.servers.settings.startup.update');
+    Route::get('server/{server}/networking/allocations', [
+        ServerAllocationsController::class,
+        'index',
+    ])->name('client.servers.allocations');
+    Route::post('server/{server}/networking/allocations', [
+        ServerAllocationsController::class,
+        'store',
+    ])->name('client.servers.allocations.store');
+    Route::patch('server/{server}/networking/allocations/primary', [
+        ServerAllocationsController::class,
+        'updatePrimary',
+    ])->name('client.servers.allocations.primary.update');
+    Route::delete('server/{server}/networking/allocations/{allocation}', [
+        ServerAllocationsController::class,
+        'destroy',
+    ])->name('client.servers.allocations.destroy');
+    Route::get('server/{server}/networking/firewall', [
+        ServerFirewallController::class,
+        'index',
+    ])->name('client.servers.firewall');
+    Route::post('server/{server}/networking/firewall', [
+        ServerFirewallController::class,
+        'store',
+    ])->name('client.servers.firewall.store');
+    Route::delete('server/{server}/networking/firewall/{rule}', [
+        ServerFirewallController::class,
+        'destroy',
+    ])->name('client.servers.firewall.destroy');
     Route::get('api/client/servers/{server}/files/contents', [
         ServerFilesController::class,
         'contents',
