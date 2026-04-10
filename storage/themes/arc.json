@@ -1,0 +1,38 @@
+{
+    "name": "Arc Dark",
+    "description": "Popular GTK theme for GNOME desktops.",
+    "variables": {
+        "background": "#383c4a",
+        "foreground": "#d3dae3",
+        "card": "#383c4a",
+        "card-foreground": "#d3dae3",
+        "popover": "#2f343f",
+        "popover-foreground": "#d3dae3",
+        "primary": "#d3dae3",
+        "primary-foreground": "#383c4a",
+        "secondary": "#404552",
+        "secondary-foreground": "#d3dae3",
+        "muted": "#404552",
+        "muted-foreground": "#7c818c",
+        "accent": "#404552",
+        "accent-foreground": "#d3dae3",
+        "destructive": "#cc575d",
+        "border": "#4b5162",
+        "input": "#4b5162",
+        "ring": "#5c6170",
+        "sidebar": "#2f343f",
+        "sidebar-foreground": "#d3dae3",
+        "sidebar-accent": "#404552",
+        "sidebar-accent-foreground": "#d3dae3",
+        "sidebar-border": "#4b5162",
+        "brand": "#5294e2",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(82, 148, 226, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#5294e2",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(82, 148, 226, 0.1)"
+    },
+    "swatches": ["#5294e2", "#383c4a", "#4b5162", "#7c818c"]
+}

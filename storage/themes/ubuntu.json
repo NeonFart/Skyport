@@ -1,0 +1,43 @@
+{
+    "name": "Ubuntu",
+    "description": "Canonical's signature Ubuntu desktop colors.",
+    "variables": {
+        "background": "#300a24",
+        "foreground": "#eeeeec",
+        "card": "#300a24",
+        "card-foreground": "#eeeeec",
+        "popover": "#3c1130",
+        "popover-foreground": "#eeeeec",
+        "primary": "#eeeeec",
+        "primary-foreground": "#300a24",
+        "secondary": "#3c1130",
+        "secondary-foreground": "#eeeeec",
+        "muted": "#3c1130",
+        "muted-foreground": "#948490",
+        "accent": "#3c1130",
+        "accent-foreground": "#eeeeec",
+        "destructive": "#ef2929",
+        "border": "#52243e",
+        "input": "#52243e",
+        "ring": "#6b3a57",
+        "sidebar": "#250820",
+        "sidebar-foreground": "#eeeeec",
+        "sidebar-accent": "#3c1130",
+        "sidebar-accent-foreground": "#eeeeec",
+        "sidebar-border": "#52243e",
+        "brand": "#e95420",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(233, 84, 32, 0.12)"
+    },
+    "fonts": {
+        "sans": "'Ubuntu', 'Inter', system-ui, sans-serif",
+        "heading": "'Ubuntu', 'Inter', system-ui, sans-serif",
+        "mono": "'Ubuntu Mono', 'JetBrains Mono', monospace"
+    },
+    "light_variables": {
+        "brand": "#e95420",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(233, 84, 32, 0.1)"
+    },
+    "swatches": ["#e95420", "#300a24", "#52243e", "#948490"]
+}

@@ -1,0 +1,38 @@
+{
+    "name": "Palenight",
+    "description": "Material Theme's most popular variant.",
+    "variables": {
+        "background": "#292d3e",
+        "foreground": "#a6accd",
+        "card": "#292d3e",
+        "card-foreground": "#a6accd",
+        "popover": "#232635",
+        "popover-foreground": "#a6accd",
+        "primary": "#a6accd",
+        "primary-foreground": "#292d3e",
+        "secondary": "#32374d",
+        "secondary-foreground": "#a6accd",
+        "muted": "#32374d",
+        "muted-foreground": "#676e95",
+        "accent": "#32374d",
+        "accent-foreground": "#a6accd",
+        "destructive": "#ff5370",
+        "border": "#3c415c",
+        "input": "#3c415c",
+        "ring": "#4e5579",
+        "sidebar": "#232635",
+        "sidebar-foreground": "#a6accd",
+        "sidebar-accent": "#32374d",
+        "sidebar-accent-foreground": "#a6accd",
+        "sidebar-border": "#3c415c",
+        "brand": "#c792ea",
+        "brand-foreground": "#292d3e",
+        "brand-muted": "rgba(199, 146, 234, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#9c5ec0",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(156, 94, 192, 0.1)"
+    },
+    "swatches": ["#c792ea", "#292d3e", "#3c415c", "#676e95"]
+}

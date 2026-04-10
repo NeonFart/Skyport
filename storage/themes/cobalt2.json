@@ -1,0 +1,38 @@
+{
+    "name": "Cobalt2",
+    "description": "Wes Bos's legendary VS Code theme.",
+    "variables": {
+        "background": "#193549",
+        "foreground": "#e1efff",
+        "card": "#193549",
+        "card-foreground": "#e1efff",
+        "popover": "#122738",
+        "popover-foreground": "#e1efff",
+        "primary": "#e1efff",
+        "primary-foreground": "#193549",
+        "secondary": "#1f4662",
+        "secondary-foreground": "#e1efff",
+        "muted": "#1f4662",
+        "muted-foreground": "#5f8dab",
+        "accent": "#1f4662",
+        "accent-foreground": "#e1efff",
+        "destructive": "#ff628c",
+        "border": "#2a5a7b",
+        "input": "#2a5a7b",
+        "ring": "#3a6f90",
+        "sidebar": "#122738",
+        "sidebar-foreground": "#e1efff",
+        "sidebar-accent": "#1f4662",
+        "sidebar-accent-foreground": "#e1efff",
+        "sidebar-border": "#2a5a7b",
+        "brand": "#ffc600",
+        "brand-foreground": "#193549",
+        "brand-muted": "rgba(255, 198, 0, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#d4a500",
+        "brand-foreground": "#1a2f40",
+        "brand-muted": "rgba(212, 165, 0, 0.1)"
+    },
+    "swatches": ["#ffc600", "#193549", "#2a5a7b", "#5f8dab"]
+}
