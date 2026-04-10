@@ -1025,7 +1025,9 @@ export default function ServerConsole({ server }: Props) {
         };
     }, [connect]);
 
-    const consoleLineCount = consoleLines.length;
+    // Use the last line's ID so the effect fires even when the array
+    // length stays at MAX_CONSOLE_LINES (old lines are sliced off).
+    const lastConsoleLineId = consoleLines.at(-1)?.id ?? 0;
 
     const isNearBottomRef = useRef(true);
 
@@ -1048,8 +1050,6 @@ export default function ServerConsole({ server }: Props) {
     }, []);
 
     useEffect(() => {
-        void consoleLineCount;
-
         if (!isNearBottomRef.current) {
             return;
         }
@@ -1066,7 +1066,7 @@ export default function ServerConsole({ server }: Props) {
                 viewport.scrollTop = viewport.scrollHeight;
             }
         });
-    }, [consoleLineCount]);
+    }, [lastConsoleLineId]);
 
     const sendPowerSignal = async (signal: ServerPowerSignal) => {
         setSubmittingAction(signal);
