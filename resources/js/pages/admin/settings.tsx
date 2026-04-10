@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import {
     AlertTriangle,
     BarChart3,
@@ -745,15 +745,16 @@ export default function Settings({ settings, themes }: Props) {
                                                 key={theme.id}
                                                 type="button"
                                                 onClick={() => {
-                                                    form.setData('theme', theme.id);
-                                                    form.patch(update.url(), {
-                                                        preserveScroll: true,
-                                                        data: { ...form.data, theme: theme.id },
-                                                        onSuccess: () => {
-                                                            form.setDefaults();
-                                                            toast.success(`Theme changed to ${theme.name}`);
+                                                    router.patch(
+                                                        update.url(),
+                                                        { ...form.data, theme: theme.id },
+                                                        {
+                                                            preserveScroll: true,
+                                                            onSuccess: () => {
+                                                                toast.success(`Theme changed to ${theme.name}`);
+                                                            },
                                                         },
-                                                    });
+                                                    );
                                                 }}
                                                 className={`group relative overflow-hidden rounded-lg border-2 transition-all ${
                                                     settings.theme === theme.id
