@@ -76,6 +76,7 @@ type Props = {
     };
     interconnects: InterconnectEntry[];
     eligibleServers: ServerEntry[];
+    isOwner: boolean;
 };
 
 function slugify(name: string): string {
@@ -99,11 +100,13 @@ function MemberRow({
     serverId,
     interconnectId,
     isSelf,
+    isOwner,
 }: {
     member: ServerEntry;
     serverId: number;
     interconnectId: number;
     isSelf: boolean;
+    isOwner: boolean;
 }) {
     const [removing, setRemoving] = useState(false);
     const alias = slugify(member.name);
@@ -159,7 +162,7 @@ function MemberRow({
                     </div>
                 </div>
             </div>
-            {!isSelf && (
+            {isOwner && !isSelf && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
@@ -302,10 +305,12 @@ function InterconnectCard({
     interconnect,
     serverId,
     eligibleServers,
+    isOwner,
 }: {
     interconnect: InterconnectEntry;
     serverId: number;
     eligibleServers: ServerEntry[];
+    isOwner: boolean;
 }) {
     const [leaving, setLeaving] = useState(false);
     const [joining, setJoining] = useState(false);
@@ -381,84 +386,94 @@ function InterconnectCard({
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {interconnect.is_member ? (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
+                        {isOwner && (
+                            <>
+                                {interconnect.is_member ? (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-muted-foreground"
+                                                disabled={leaving}
+                                                onClick={handleLeave}
+                                            >
+                                                {leaving ? (
+                                                    <Spinner className="h-3.5 w-3.5" />
+                                                ) : (
+                                                    <LogOut className="h-3.5 w-3.5" />
+                                                )}
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Leave network
+                                        </TooltipContent>
+                                    </Tooltip>
+                                ) : (
                                     <Button
                                         variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-muted-foreground"
-                                        disabled={leaving}
-                                        onClick={handleLeave}
+                                        size="sm"
+                                        disabled={joining}
+                                        onClick={handleJoin}
                                     >
-                                        {leaving ? (
-                                            <Spinner className="h-3.5 w-3.5" />
-                                        ) : (
-                                            <LogOut className="h-3.5 w-3.5" />
-                                        )}
+                                        {joining && <Spinner />}
+                                        Join
                                     </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Leave network</TooltipContent>
-                            </Tooltip>
-                        ) : (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={joining}
-                                onClick={handleJoin}
-                            >
-                                {joining && <Spinner />}
-                                Join
-                            </Button>
+                                )}
+                                <AddServerDialog
+                                    serverId={serverId}
+                                    interconnect={interconnect}
+                                    eligibleServers={eligibleServers}
+                                />
+                                <AlertDialog>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                    disabled={deleting}
+                                                >
+                                                    {deleting ? (
+                                                        <Spinner className="h-3.5 w-3.5" />
+                                                    ) : (
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    )}
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Delete network
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>
+                                                Delete {interconnect.name}
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will disconnect all
+                                                servers from this private
+                                                network. They will no longer
+                                                be able to communicate over
+                                                it.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>
+                                                Cancel
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={handleDelete}
+                                            >
+                                                Delete
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </>
                         )}
-                        <AddServerDialog
-                            serverId={serverId}
-                            interconnect={interconnect}
-                            eligibleServers={eligibleServers}
-                        />
-                        <AlertDialog>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <AlertDialogTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                            disabled={deleting}
-                                        >
-                                            {deleting ? (
-                                                <Spinner className="h-3.5 w-3.5" />
-                                            ) : (
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            )}
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    Delete network
-                                </TooltipContent>
-                            </Tooltip>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                        Delete {interconnect.name}
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will disconnect all servers from
-                                        this private network. They will no
-                                        longer be able to communicate over it.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>
-                                        Cancel
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDelete}>
-                                        Delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
                     </div>
                 </div>
 
@@ -474,6 +489,7 @@ function InterconnectCard({
                                 serverId={serverId}
                                 interconnectId={interconnect.id}
                                 isSelf={member.id === serverId}
+                                isOwner={isOwner}
                             />
                         ))}
                     </div>
@@ -552,6 +568,7 @@ export default function ServerInterconnect({
     server,
     interconnects,
     eligibleServers,
+    isOwner,
 }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Home', href: home() },
@@ -580,11 +597,16 @@ export default function ServerInterconnect({
                                     Private networks
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    Servers on the same interconnect can reach
-                                    each other by hostname over a private link.
+                                    {isOwner
+                                        ? 'Servers on the same interconnect can reach each other by hostname over a private link.'
+                                        : "You're viewing this server as an admin. Only the server owner can manage interconnects."}
                                 </p>
                             </div>
-                            <CreateInterconnectDialog serverId={server.id} />
+                            {isOwner && (
+                                <CreateInterconnectDialog
+                                    serverId={server.id}
+                                />
+                            )}
                         </div>
                     </div>
 
@@ -595,6 +617,7 @@ export default function ServerInterconnect({
                                 interconnect={ic}
                                 serverId={server.id}
                                 eligibleServers={eligibleServers}
+                                isOwner={isOwner}
                             />
                         ))
                     ) : (

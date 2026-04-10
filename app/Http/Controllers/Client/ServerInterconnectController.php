@@ -54,6 +54,8 @@ class ServerInterconnectController extends Controller
             ])
             ->all();
 
+        $isOwner = $request->user()?->id === $server->user_id;
+
         return Inertia::render('server/networking/interconnect', [
             'server' => [
                 'id' => $server->id,
@@ -61,13 +63,15 @@ class ServerInterconnectController extends Controller
                 'status' => $server->status,
             ],
             'interconnects' => $interconnects,
-            'eligibleServers' => $eligibleServers,
+            'eligibleServers' => $isOwner ? $eligibleServers : [],
+            'isOwner' => $isOwner,
         ]);
     }
 
     public function store(StoreInterconnectRequest $request, Server $server): RedirectResponse
     {
         $this->authorizeServerAccess($request, $server);
+        $this->authorizeOwnership($request, $server);
 
         $existing = Interconnect::query()
             ->where('user_id', $server->user_id)
@@ -95,6 +99,7 @@ class ServerInterconnectController extends Controller
     public function join(Request $request, Server $server, Interconnect $interconnect): RedirectResponse
     {
         $this->authorizeServerAccess($request, $server);
+        $this->authorizeOwnership($request, $server);
         $this->authorizeInterconnectAccess($server, $interconnect);
 
         if ($interconnect->servers()->where('server_id', $server->id)->exists()) {
@@ -109,6 +114,7 @@ class ServerInterconnectController extends Controller
     public function leave(Request $request, Server $server, Interconnect $interconnect): RedirectResponse
     {
         $this->authorizeServerAccess($request, $server);
+        $this->authorizeOwnership($request, $server);
         $this->authorizeInterconnectAccess($server, $interconnect);
 
         $interconnect->servers()->detach($server->id);
@@ -125,6 +131,7 @@ class ServerInterconnectController extends Controller
     public function addServer(Request $request, Server $server, Interconnect $interconnect): RedirectResponse
     {
         $this->authorizeServerAccess($request, $server);
+        $this->authorizeOwnership($request, $server);
         $this->authorizeInterconnectAccess($server, $interconnect);
 
         $validated = $request->validate([
@@ -151,6 +158,7 @@ class ServerInterconnectController extends Controller
     public function removeServer(Request $request, Server $server, Interconnect $interconnect): RedirectResponse
     {
         $this->authorizeServerAccess($request, $server);
+        $this->authorizeOwnership($request, $server);
         $this->authorizeInterconnectAccess($server, $interconnect);
 
         $validated = $request->validate([
@@ -171,11 +179,21 @@ class ServerInterconnectController extends Controller
     public function destroy(Request $request, Server $server, Interconnect $interconnect): RedirectResponse
     {
         $this->authorizeServerAccess($request, $server);
+        $this->authorizeOwnership($request, $server);
         $this->authorizeInterconnectAccess($server, $interconnect);
 
         $interconnect->delete();
 
         return Redirect::back()->with('success', 'Interconnect deleted.');
+    }
+
+    private function authorizeOwnership(Request $request, Server $server): void
+    {
+        abort_unless(
+            $request->user()?->id === $server->user_id,
+            403,
+            'Only the server owner can manage interconnects.',
+        );
     }
 
     private function authorizeInterconnectAccess(Server $server, Interconnect $interconnect): void

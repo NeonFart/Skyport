@@ -266,6 +266,42 @@ test('server owner can delete an interconnect', function () {
     expect(Interconnect::query()->find($ic->id))->toBeNull();
 });
 
+test('admin can view interconnect page but cannot create', function () {
+    $deps = interconnectTestDependencies();
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    actingAs($admin);
+
+    get("/server/{$deps['server']->id}/networking/interconnect")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('isOwner', false)
+            ->where('eligibleServers', []));
+
+    post("/server/{$deps['server']->id}/networking/interconnect", [
+        'name' => 'admin-net',
+    ])->assertForbidden();
+});
+
+test('admin cannot join or leave interconnects', function () {
+    $deps = interconnectTestDependencies();
+    $admin = User::factory()->create(['is_admin' => true]);
+    $ic = Interconnect::factory()->create([
+        'user_id' => $deps['user']->id,
+        'node_id' => $deps['node']->id,
+        'name' => 'user-net',
+    ]);
+    $ic->servers()->attach($deps['server']->id);
+
+    actingAs($admin);
+
+    post("/server/{$deps['server']->id}/networking/interconnect/{$ic->id}/join")
+        ->assertForbidden();
+
+    delete("/server/{$deps['server']->id}/networking/interconnect/{$ic->id}")
+        ->assertForbidden();
+});
+
 test('interconnects are included in server sync payload', function () {
     $deps = interconnectTestDependencies();
     $ic = Interconnect::factory()->create([

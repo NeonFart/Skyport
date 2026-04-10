@@ -144,12 +144,17 @@ function ServerSidebarCard({
         [runtimeState],
     );
 
+    const isAdmin = (usePage().props as { auth: { user: { is_admin: boolean } } }).auth.user.is_admin;
+    const isAdminViewingOthers = isAdmin && servers.length > 50;
+
     const switcherServers = useMemo(
         () =>
-            servers
-                .filter((candidate) => candidate.id !== server.id)
-                .sort((left, right) => left.name.localeCompare(right.name)),
-        [server.id, servers],
+            isAdminViewingOthers
+                ? []
+                : servers
+                      .filter((candidate) => candidate.id !== server.id)
+                      .sort((left, right) => left.name.localeCompare(right.name)),
+        [server.id, servers, isAdminViewingOthers],
     );
 
     const sendPowerSignal = async (signal: ServerPowerSignal) => {
@@ -301,7 +306,11 @@ function ServerSidebarCard({
                 )}
             >
                 <div className="space-y-0.5 pt-1.5">
-                    {switcherServers.length > 0 ? (
+                    {isAdminViewingOthers ? (
+                        <p className="px-2.5 py-1.5 text-sm text-sidebar-foreground/50">
+                            You're an admin, there are too many other servers to show.
+                        </p>
+                    ) : switcherServers.length > 0 ? (
                         switcherServers.map((candidate) => (
                             <Link
                                 key={candidate.id}
