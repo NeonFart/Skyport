@@ -47,7 +47,7 @@ export default function Profile({ status }: { status?: string }) {
                     />
 
                     <Form
-                        {...updateProfile.form()}
+                        {...updateProfile()}
                         options={{ preserveScroll: true }}
                         onStart={() => {
                             submitStart.current = Date.now();
