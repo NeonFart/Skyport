@@ -65,6 +65,11 @@ class Server extends Model
         return $this->belongsToMany(Interconnect::class)->withTimestamps();
     }
 
+    public function serverUsers(): HasMany
+    {
+        return $this->hasMany(ServerUser::class);
+    }
+
     protected function casts(): array
     {
         return [

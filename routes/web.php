@@ -8,6 +8,7 @@ use App\Http\Controllers\Client\ServerFirewallController;
 use App\Http\Controllers\Client\ServerInterconnectController;
 use App\Http\Controllers\Client\ServerPowerController;
 use App\Http\Controllers\Client\ServerSettingsController;
+use App\Http\Controllers\Client\ServerUsersController;
 use App\Http\Controllers\Client\ServerWebsocketController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
@@ -84,6 +85,22 @@ Route::middleware(['auth'])->group(function () {
         ServerFirewallController::class,
         'destroy',
     ])->name('client.servers.firewall.destroy');
+    Route::get('server/{server}/users', [
+        ServerUsersController::class,
+        'index',
+    ])->name('client.servers.users');
+    Route::post('server/{server}/users', [
+        ServerUsersController::class,
+        'store',
+    ])->name('client.servers.users.store');
+    Route::patch('server/{server}/users/{serverUser}', [
+        ServerUsersController::class,
+        'update',
+    ])->name('client.servers.users.update');
+    Route::delete('server/{server}/users/{serverUser}', [
+        ServerUsersController::class,
+        'destroy',
+    ])->name('client.servers.users.destroy');
     Route::get('server/{server}/networking/interconnect', [
         ServerInterconnectController::class,
         'index',

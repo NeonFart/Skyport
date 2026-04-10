@@ -18,6 +18,7 @@ import NodesIcon from '@/components/nodes-icon';
 import ServerIcon from '@/components/server-icon';
 import ServerStatusIndicator from '@/components/server-status-indicator';
 
+import ServerUsersIcon from '@/components/server-users-icon';
 import SettingsIcon from '@/components/settings-icon';
 import { NavUser } from '@/components/nav-user';
 import UsersIcon from '@/components/users-icon';
@@ -112,6 +113,10 @@ function serverHrefForPage(currentUrl: string, serverId: number): string {
     }
 
     if (/^\/server\/\d+\/networking(?:\/.*)?(?:\?.*)?$/u.test(currentUrl)) {
+        return currentUrl.replace(/^\/server\/\d+/u, `/server/${serverId}`);
+    }
+
+    if (/^\/server\/\d+\/users(?:\?.*)?$/u.test(currentUrl)) {
         return currentUrl.replace(/^\/server\/\d+/u, `/server/${serverId}`);
     }
 
@@ -417,6 +422,11 @@ export function AppSidebar() {
                             href: `/server/${server.id}/networking/interconnect`,
                         },
                     ],
+                },
+                {
+                    title: 'Users',
+                    href: `/server/${server.id}/users`,
+                    icon: ServerUsersIcon,
                 },
                 {
                     title: 'Settings',
