@@ -371,33 +371,29 @@ export function AppSidebar() {
 
     const currentContext = sidebarContextFor(page.url, auth.user.is_admin);
     const prevContextRef = useRef<SidebarContext>(currentContext);
-    const [slideClass, setSlideClass] = useState('');
     const slideKeyRef = useRef(0);
+    const slideClassRef = useRef('');
 
-    useEffect(() => {
+    if (prevContextRef.current !== currentContext) {
         const prev = prevContextRef.current;
+        const prevDepth = contextDepth[prev];
+        const nextDepth = contextDepth[currentContext];
 
-        if (prev !== currentContext) {
-            const prevDepth = contextDepth[prev];
-            const nextDepth = contextDepth[currentContext];
+        let direction: 'left' | 'right' = 'right';
 
-            let direction: 'left' | 'right' = 'right';
-
-            if (nextDepth < prevDepth) {
-                direction = 'left';
-            } else if (nextDepth === prevDepth && prev === 'server') {
-                direction = 'left';
-            }
-
-            slideKeyRef.current += 1;
-            setSlideClass(
-                direction === 'right'
-                    ? 'animate-slide-in-right'
-                    : 'animate-slide-in-left',
-            );
-            prevContextRef.current = currentContext;
+        if (nextDepth < prevDepth) {
+            direction = 'left';
+        } else if (nextDepth === prevDepth && prev === 'server') {
+            direction = 'left';
         }
-    }, [currentContext]);
+
+        prevContextRef.current = currentContext;
+        slideKeyRef.current += 1;
+        slideClassRef.current =
+            direction === 'right'
+                ? 'animate-slide-in-right'
+                : 'animate-slide-in-left';
+    }
     const availableServers = serverSwitcher ?? [];
     const mainNavItems: NavItem[] = isAdminSidebar
         ? [
@@ -514,10 +510,10 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className="!overflow-x-clip">
                 <div
                     key={slideKeyRef.current}
-                    className={cn('flex flex-col', slideClass)}
+                    className={cn('flex flex-col', slideClassRef.current)}
                 >
                     {isServerSidebar && server ? (
                         <ServerSidebarCard
