@@ -1025,12 +1025,8 @@ export default function ServerConsole({ server }: Props) {
         };
     }, [connect]);
 
-    // Use the last line's ID so the effect fires even when the array
-    // length stays at MAX_CONSOLE_LINES (old lines are sliced off).
     const lastConsoleLineId = consoleLines.at(-1)?.id ?? 0;
 
-    const isNearBottomRef = useRef(true);
-
     useEffect(() => {
         const viewport = consoleViewportRef.current;
 
@@ -1038,33 +1034,11 @@ export default function ServerConsole({ server }: Props) {
             return;
         }
 
-        const handleScroll = () => {
-            const threshold = 80;
-            isNearBottomRef.current =
-                viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < threshold;
-        };
-
-        viewport.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => viewport.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    useEffect(() => {
-        if (!isNearBottomRef.current) {
-            return;
-        }
-
-        const viewport = consoleViewportRef.current;
-
-        if (!viewport) {
-            return;
-        }
-
-        // Use rAF to scroll after React has flushed DOM updates.
+        // Double rAF ensures the DOM has fully painted before scrolling.
         requestAnimationFrame(() => {
-            if (viewport && isNearBottomRef.current) {
+            requestAnimationFrame(() => {
                 viewport.scrollTop = viewport.scrollHeight;
-            }
+            });
         });
     }, [lastConsoleLineId]);
 
