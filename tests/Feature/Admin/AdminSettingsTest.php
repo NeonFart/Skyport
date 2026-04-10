@@ -130,3 +130,35 @@ it(
             ->assertSessionHasErrors('announcement_icon');
     },
 );
+
+it('allows admins to update allocation feature settings', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $this->actingAs($admin)
+        ->patch('/admin/settings', [
+            'app_name' => 'Skyport',
+            'allocations_enabled' => true,
+            'allocations_limit' => 5,
+        ])
+        ->assertRedirect();
+
+    expect(
+        AppSetting::query()
+            ->where('key', AppSettingsService::ALLOCATIONS_ENABLED_KEY)
+            ->value('value'),
+    )->toBe('1');
+    expect(
+        AppSetting::query()
+            ->where('key', AppSettingsService::ALLOCATIONS_LIMIT_KEY)
+            ->value('value'),
+    )->toBe('5');
+
+    $this->actingAs($admin)
+        ->get('/admin/settings')
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('settings.allocations_enabled', true)
+                ->where('settings.allocations_limit', 5),
+        );
+});

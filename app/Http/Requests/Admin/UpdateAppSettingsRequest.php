@@ -35,6 +35,8 @@ class UpdateAppSettingsRequest extends FormRequest
                 Rule::in(AppSettingsService::announcementIcons()),
             ],
             'telemetry_enabled' => ['boolean'],
+            'allocations_enabled' => ['boolean'],
+            'allocations_limit' => ['nullable', 'integer', 'min:0', 'max:100'],
         ];
     }
 

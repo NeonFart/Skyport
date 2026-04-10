@@ -30,6 +30,8 @@ class SettingsController extends Controller
                 'announcement_dismissable' => $this->appSettingsService->announcementDismissable(),
                 'announcement_icon' => $this->appSettingsService->announcementIcon(),
                 'telemetry_enabled' => $this->appSettingsService->telemetryEnabled(),
+                'allocations_enabled' => $this->appSettingsService->allocationsEnabled(),
+                'allocations_limit' => $this->appSettingsService->allocationsLimit(),
             ],
         ]);
     }
@@ -46,6 +48,8 @@ class SettingsController extends Controller
                 $this->appSettingsService->announcementIcon(),
         );
         $this->appSettingsService->setTelemetryEnabled($request->boolean('telemetry_enabled'));
+        $this->appSettingsService->setAllocationsEnabled($request->boolean('allocations_enabled'));
+        $this->appSettingsService->setAllocationsLimit((int) $request->validated('allocations_limit', 0));
 
         return Redirect::back()->with('success', 'Settings updated.');
     }

@@ -46,7 +46,7 @@ class ServerConfigurationService
      */
     public function payload(Server $server): array
     {
-        $server->loadMissing(['allocation', 'cargo', 'node', 'user']);
+        $server->loadMissing(['allocation', 'cargo', 'firewallRules', 'node', 'user']);
         $allocation = $server->allocation;
 
         if (! $allocation) {
@@ -104,6 +104,17 @@ class ServerConfigurationService
                 'name' => $server->user->name,
             ],
             'volume_path' => sprintf('volumes/%d', $server->id),
+            'firewall_rules' => $server->firewallRules->map(
+                fn ($rule): array => [
+                    'id' => $rule->id,
+                    'direction' => $rule->direction,
+                    'action' => $rule->action,
+                    'protocol' => $rule->protocol,
+                    'source' => $rule->source,
+                    'port_start' => $rule->port_start,
+                    'port_end' => $rule->port_end,
+                ],
+            )->all(),
         ];
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[
     Fillable([
@@ -46,6 +47,16 @@ class Server extends Model
     public function allocation(): BelongsTo
     {
         return $this->belongsTo(Allocation::class);
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(Allocation::class);
+    }
+
+    public function firewallRules(): HasMany
+    {
+        return $this->hasMany(FirewallRule::class);
     }
 
     protected function casts(): array
