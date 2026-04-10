@@ -1,38 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import {
-    ReactFlow,
-    Background,
-    Controls,
-    type Node,
-    type Edge,
-    type NodeTypes,
-    type OnNodesChange,
-    type OnEdgesChange,
-    type OnConnect,
-    addEdge,
-    applyNodeChanges,
-    applyEdgeChanges,
-    Handle,
-    Position,
-    MarkerType,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import {
-    ArrowLeft,
-    ChevronRight,
-    Clock,
-    Command,
-    HardDrive,
-    Pencil,
-    Play,
-    Plus,
-    Power,
-    RefreshCw,
-    Server,
-    Trash2,
-    Zap,
-} from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import {
     destroy,
     store,
@@ -84,12 +52,19 @@ import { home } from '@/routes';
 import { console as serverConsole } from '@/routes/client/servers';
 import type { BreadcrumbItem } from '@/types';
 
+type StepData = {
+    id: string;
+    type: 'trigger' | 'condition' | 'action';
+    kind: string;
+    config: Record<string, string>;
+};
+
 type WorkflowEntry = {
     id: number;
     name: string;
     enabled: boolean;
-    nodes: Node[];
-    edges: Edge[];
+    nodes: StepData[];
+    edges: never[];
     updated_at: string | null;
 };
 
@@ -98,209 +73,296 @@ type Props = {
     workflows: WorkflowEntry[];
 };
 
-// --- Custom node definitions ---
-
-const triggerTypes = [
-    { value: 'schedule', label: 'Schedule', icon: Clock, desc: 'Run on a timer' },
-    { value: 'state_change', label: 'State change', icon: Server, desc: 'When server state changes' },
-    { value: 'backup_complete', label: 'Backup complete', icon: HardDrive, desc: 'After a backup finishes' },
-    { value: 'startup', label: 'Server start', icon: Play, desc: 'When server starts' },
+const triggerOptions = [
+    { value: 'schedule', label: 'On a schedule' },
+    { value: 'state_change', label: 'On state change' },
+    { value: 'backup_complete', label: 'On backup complete' },
+    { value: 'startup', label: 'On server start' },
 ];
 
-const actionTypes = [
-    { value: 'run_command', label: 'Run command', icon: Command, desc: 'Send a console command' },
-    { value: 'power', label: 'Power action', icon: Power, desc: 'Start, stop, restart, or kill' },
-    { value: 'create_backup', label: 'Create backup', icon: HardDrive, desc: 'Create a new backup' },
-    { value: 'webhook', label: 'Webhook', icon: Zap, desc: 'Send an HTTP request' },
+const conditionOptions = [
+    { value: 'server_online', label: 'Server is online' },
+    { value: 'server_offline', label: 'Server is offline' },
 ];
 
-const conditionTypes = [
-    { value: 'server_online', label: 'Server is online', icon: Server },
-    { value: 'server_offline', label: 'Server is offline', icon: Server },
+const actionOptions = [
+    { value: 'run_command', label: 'Run command' },
+    { value: 'power', label: 'Power action' },
+    { value: 'create_backup', label: 'Create backup' },
+    { value: 'webhook', label: 'Send webhook' },
 ];
 
-function TriggerNode({ data }: { data: Record<string, string> }) {
-    const trigger = triggerTypes.find((t) => t.value === data.triggerType);
-    const Icon = trigger?.icon ?? Clock;
-
-    return (
-        <div className="min-w-48 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 px-4 py-3 shadow-lg shadow-amber-500/5 backdrop-blur-sm">
-            <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
-                    <Icon className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-500/70">
-                        Trigger
-                    </p>
-                    <p className="text-xs font-medium text-foreground">
-                        {trigger?.label ?? 'Select trigger'}
-                    </p>
-                </div>
-            </div>
-            {data.triggerType === 'schedule' && data.interval && (
-                <p className="mt-2 rounded-md bg-amber-500/10 px-2 py-1 text-[11px] text-amber-600 dark:text-amber-400">
-                    Every {data.interval} minutes
-                </p>
-            )}
-            {data.triggerType === 'state_change' && data.targetState && (
-                <p className="mt-2 rounded-md bg-amber-500/10 px-2 py-1 text-[11px] text-amber-600 dark:text-amber-400">
-                    → {data.targetState}
-                </p>
-            )}
-            <Handle type="source" position={Position.Bottom} className="!h-3 !w-3 !rounded-full !border-2 !border-amber-500 !bg-background" />
-        </div>
-    );
+function labelFor(step: StepData): string {
+    const all = [...triggerOptions, ...conditionOptions, ...actionOptions];
+    return all.find((o) => o.value === step.kind)?.label ?? step.kind;
 }
 
-function ActionNode({ data }: { data: Record<string, string> }) {
-    const action = actionTypes.find((a) => a.value === data.actionType);
-    const Icon = action?.icon ?? Command;
-
-    return (
-        <div className="min-w-48 rounded-xl border-2 border-sky-500/30 bg-sky-500/5 px-4 py-3 shadow-lg shadow-sky-500/5 backdrop-blur-sm">
-            <Handle type="target" position={Position.Top} className="!h-3 !w-3 !rounded-full !border-2 !border-sky-500 !bg-background" />
-            <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/15 text-sky-500">
-                    <Icon className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-sky-500/70">
-                        Action
-                    </p>
-                    <p className="text-xs font-medium text-foreground">
-                        {action?.label ?? 'Select action'}
-                    </p>
-                </div>
-            </div>
-            {data.actionType === 'run_command' && data.command && (
-                <p className="mt-2 rounded-md bg-sky-500/10 px-2 py-1 font-mono text-[11px] text-sky-600 dark:text-sky-400">
-                    {data.command}
-                </p>
-            )}
-            {data.actionType === 'power' && data.signal && (
-                <p className="mt-2 rounded-md bg-sky-500/10 px-2 py-1 text-[11px] text-sky-600 dark:text-sky-400">
-                    {data.signal}
-                </p>
-            )}
-            <Handle type="source" position={Position.Bottom} className="!h-3 !w-3 !rounded-full !border-2 !border-sky-500 !bg-background" />
-        </div>
-    );
+function summaryFor(step: StepData): string | null {
+    if (step.kind === 'schedule' && step.config.interval) {
+        return `Every ${step.config.interval} min`;
+    }
+    if (step.kind === 'state_change' && step.config.target_state) {
+        return `→ ${step.config.target_state}`;
+    }
+    if (step.kind === 'run_command' && step.config.command) {
+        return step.config.command;
+    }
+    if (step.kind === 'power' && step.config.signal) {
+        return step.config.signal;
+    }
+    if (step.kind === 'webhook' && step.config.url) {
+        return step.config.url;
+    }
+    return null;
 }
 
-function ConditionNode({ data }: { data: Record<string, string> }) {
-    const condition = conditionTypes.find((c) => c.value === data.conditionType);
-
-    return (
-        <div className="min-w-48 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5 px-4 py-3 shadow-lg shadow-emerald-500/5 backdrop-blur-sm">
-            <Handle type="target" position={Position.Top} className="!h-3 !w-3 !rounded-full !border-2 !border-emerald-500 !bg-background" />
-            <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
-                    <RefreshCw className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500/70">
-                        Condition
-                    </p>
-                    <p className="text-xs font-medium text-foreground">
-                        {condition?.label ?? 'Select condition'}
-                    </p>
-                </div>
-            </div>
-            <Handle type="source" position={Position.Bottom} className="!h-3 !w-3 !rounded-full !border-2 !border-emerald-500 !bg-background" />
-        </div>
-    );
+function typeLabel(type: StepData['type']): string {
+    return type === 'trigger' ? 'When' : type === 'condition' ? 'If' : 'Then';
 }
 
-const nodeTypes: NodeTypes = {
-    trigger: TriggerNode,
-    action: ActionNode,
-    condition: ConditionNode,
-};
+function typeDot(type: StepData['type']): string {
+    return type === 'trigger'
+        ? 'bg-amber-500'
+        : type === 'condition'
+          ? 'bg-emerald-500'
+          : 'bg-sky-500';
+}
 
-const defaultEdgeOptions = {
-    animated: true,
-    style: { stroke: 'rgba(148, 163, 184, 0.4)', strokeWidth: 2 },
-    markerEnd: { type: MarkerType.ArrowClosed, color: 'rgba(148, 163, 184, 0.4)' },
-};
+// --- Step editor ---
 
-// --- Add node panel ---
-
-function AddNodePanel({
-    onAdd,
+function StepConfigFields({
+    step,
+    onChange,
 }: {
-    onAdd: (type: string, subtype: string) => void;
+    step: StepData;
+    onChange: (config: Record<string, string>) => void;
 }) {
-    const [open, setOpen] = useState(false);
-    const [tab, setTab] = useState<'trigger' | 'condition' | 'action'>('trigger');
+    const set = (key: string, value: string) =>
+        onChange({ ...step.config, [key]: value });
 
-    const items =
-        tab === 'trigger'
-            ? triggerTypes.map((t) => ({ ...t, nodeType: 'trigger', subtype: t.value }))
-            : tab === 'action'
-              ? actionTypes.map((a) => ({ ...a, nodeType: 'action', subtype: a.value }))
-              : conditionTypes.map((c) => ({ ...c, nodeType: 'condition', subtype: c.value, desc: '' }));
+    if (step.kind === 'schedule') {
+        return (
+            <div className="grid gap-2">
+                <Label>Interval (minutes)</Label>
+                <Input
+                    type="number"
+                    min={1}
+                    value={step.config.interval ?? ''}
+                    onChange={(e) => set('interval', e.target.value)}
+                    placeholder="10"
+                />
+            </div>
+        );
+    }
+
+    if (step.kind === 'state_change') {
+        return (
+            <div className="grid gap-2">
+                <Label>Target state</Label>
+                <Select
+                    value={step.config.target_state ?? ''}
+                    onValueChange={(v) => set('target_state', v)}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="running">Running</SelectItem>
+                        <SelectItem value="offline">Offline</SelectItem>
+                        <SelectItem value="starting">Starting</SelectItem>
+                        <SelectItem value="stopping">Stopping</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        );
+    }
+
+    if (step.kind === 'run_command') {
+        return (
+            <div className="grid gap-2">
+                <Label>Command</Label>
+                <Input
+                    value={step.config.command ?? ''}
+                    onChange={(e) => set('command', e.target.value)}
+                    placeholder="say Server restarting in 5 minutes"
+                    className="font-mono text-xs"
+                />
+            </div>
+        );
+    }
+
+    if (step.kind === 'power') {
+        return (
+            <div className="grid gap-2">
+                <Label>Signal</Label>
+                <Select
+                    value={step.config.signal ?? ''}
+                    onValueChange={(v) => set('signal', v)}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select action" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="start">Start</SelectItem>
+                        <SelectItem value="stop">Stop</SelectItem>
+                        <SelectItem value="restart">Restart</SelectItem>
+                        <SelectItem value="kill">Kill</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        );
+    }
+
+    if (step.kind === 'webhook') {
+        return (
+            <div className="space-y-3">
+                <div className="grid gap-2">
+                    <Label>URL</Label>
+                    <Input
+                        value={step.config.url ?? ''}
+                        onChange={(e) => set('url', e.target.value)}
+                        placeholder="https://example.com/webhook"
+                        className="font-mono text-xs"
+                    />
+                </div>
+                <div className="grid gap-2">
+                    <Label>Method</Label>
+                    <Select
+                        value={step.config.method ?? 'POST'}
+                        onValueChange={(v) => set('method', v)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="GET">GET</SelectItem>
+                            <SelectItem value="POST">POST</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+        );
+    }
+
+    return null;
+}
+
+function StepRow({
+    step,
+    index,
+    isLast,
+    onUpdate,
+    onRemove,
+}: {
+    step: StepData;
+    index: number;
+    isLast: boolean;
+    onUpdate: (step: StepData) => void;
+    onRemove: () => void;
+}) {
+    const [expanded, setExpanded] = useState(false);
+    const summary = summaryFor(step);
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button size="sm" variant="secondary">
-                    <Plus className="h-4 w-4" />
-                    Add node
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Add a node</DialogTitle>
-                    <DialogDescription>Choose what to add to this workflow.</DialogDescription>
-                </DialogHeader>
-
-                <div className="mt-2 flex gap-1 rounded-lg bg-muted p-1">
-                    {(['trigger', 'condition', 'action'] as const).map((t) => (
-                        <button
-                            key={t}
-                            type="button"
-                            onClick={() => setTab(t)}
-                            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                                tab === t
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                            {t.charAt(0).toUpperCase() + t.slice(1)}
-                        </button>
-                    ))}
+        <div>
+            <div className="flex items-stretch gap-3">
+                {/* Vertical line + dot */}
+                <div className="flex w-5 flex-col items-center">
+                    <div
+                        className={`mt-4 h-2.5 w-2.5 shrink-0 rounded-full ring-4 ring-background ${typeDot(step.type)}`}
+                    />
+                    {!isLast && (
+                        <div className="w-px flex-1 bg-border/50" />
+                    )}
                 </div>
 
-                <div className="mt-3 grid gap-2">
-                    {items.map((item) => {
-                        const Icon = item.icon;
-
-                        return (
-                            <button
-                                key={item.subtype}
-                                type="button"
-                                onClick={() => {
-                                    onAdd(item.nodeType, item.subtype);
-                                    setOpen(false);
+                {/* Card */}
+                <div className="mb-2 flex-1">
+                    <button
+                        type="button"
+                        onClick={() => setExpanded(!expanded)}
+                        className="flex w-full items-center justify-between rounded-lg border border-border/70 bg-muted/20 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+                    >
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-medium text-muted-foreground">
+                                    {typeLabel(step.type)}
+                                </span>
+                                <span className="text-sm font-medium text-foreground">
+                                    {labelFor(step)}
+                                </span>
+                            </div>
+                            {summary && !expanded && (
+                                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                    {summary}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemove();
                                 }}
-                                className="flex items-center gap-3 rounded-lg border border-border/50 bg-background px-3 py-2.5 text-left transition-colors hover:bg-muted/50 active:scale-[0.98]"
                             >
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                                    <Icon className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3" />
+                            </Button>
+                            <ChevronDown
+                                className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
+                            />
+                        </div>
+                    </button>
+
+                    {expanded && (
+                        <div className="mt-1 rounded-lg border border-border/50 bg-background p-4">
+                            <div className="space-y-3">
+                                <div className="grid gap-2">
+                                    <Label>Type</Label>
+                                    <Select
+                                        value={step.kind}
+                                        onValueChange={(v) =>
+                                            onUpdate({
+                                                ...step,
+                                                kind: v,
+                                                config: {},
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {(step.type === 'trigger'
+                                                ? triggerOptions
+                                                : step.type === 'condition'
+                                                  ? conditionOptions
+                                                  : actionOptions
+                                            ).map((opt) => (
+                                                <SelectItem
+                                                    key={opt.value}
+                                                    value={opt.value}
+                                                >
+                                                    {opt.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium text-foreground">{item.label}</p>
-                                    {'desc' in item && item.desc && (
-                                        <p className="text-xs text-muted-foreground">{item.desc}</p>
-                                    )}
-                                </div>
-                            </button>
-                        );
-                    })}
+                                <StepConfigFields
+                                    step={step}
+                                    onChange={(config) =>
+                                        onUpdate({ ...step, config })
+                                    }
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </div>
     );
 }
 
@@ -315,65 +377,47 @@ function WorkflowEditor({
     serverId: number;
     onBack: () => void;
 }) {
-    const [flowNodes, setFlowNodes] = useState<Node[]>(workflow.nodes ?? []);
-    const [flowEdges, setFlowEdges] = useState<Edge[]>(workflow.edges ?? []);
+    const [steps, setSteps] = useState<StepData[]>(
+        (workflow.nodes as StepData[]) ?? [],
+    );
     const [saving, setSaving] = useState(false);
     const [dirty, setDirty] = useState(false);
+    const [addingType, setAddingType] = useState<
+        'trigger' | 'condition' | 'action' | null
+    >(null);
 
-    const onNodesChange: OnNodesChange = useCallback(
-        (changes) => {
-            setFlowNodes((nds) => applyNodeChanges(changes, nds));
+    const updateStep = useCallback(
+        (index: number, step: StepData) => {
+            setSteps((s) => s.map((st, i) => (i === index ? step : st)));
             setDirty(true);
         },
         [],
     );
 
-    const onEdgesChange: OnEdgesChange = useCallback(
-        (changes) => {
-            setFlowEdges((eds) => applyEdgeChanges(changes, eds));
-            setDirty(true);
-        },
-        [],
-    );
+    const removeStep = useCallback((index: number) => {
+        setSteps((s) => s.filter((_, i) => i !== index));
+        setDirty(true);
+    }, []);
 
-    const onConnect: OnConnect = useCallback(
-        (connection) => {
-            setFlowEdges((eds) => addEdge({ ...connection, ...defaultEdgeOptions }, eds));
-            setDirty(true);
-        },
-        [],
-    );
-
-    const addNode = useCallback(
-        (nodeType: string, subtype: string) => {
-            const id = `${nodeType}-${Date.now()}`;
-            const yOffset = flowNodes.length * 120 + 50;
-            const dataKey =
-                nodeType === 'trigger'
-                    ? 'triggerType'
-                    : nodeType === 'action'
-                      ? 'actionType'
-                      : 'conditionType';
-
-            setFlowNodes((nds) => [
-                ...nds,
-                {
-                    id,
-                    type: nodeType,
-                    position: { x: 250, y: yOffset },
-                    data: { [dataKey]: subtype },
-                },
-            ]);
-            setDirty(true);
-        },
-        [flowNodes.length],
-    );
+    const addStep = (type: StepData['type'], kind: string) => {
+        setSteps((s) => [
+            ...s,
+            {
+                id: `${type}-${Date.now()}`,
+                type,
+                kind,
+                config: {},
+            },
+        ]);
+        setDirty(true);
+        setAddingType(null);
+    };
 
     const save = () => {
         setSaving(true);
         router.patch(
             update.url({ server: serverId, workflow: workflow.id }),
-            { nodes: flowNodes, edges: flowEdges },
+            { nodes: steps, edges: [] },
             {
                 preserveScroll: true,
                 onSuccess: () => {
@@ -387,49 +431,120 @@ function WorkflowEditor({
         );
     };
 
+    const addOptions =
+        addingType === 'trigger'
+            ? triggerOptions
+            : addingType === 'condition'
+              ? conditionOptions
+              : addingType === 'action'
+                ? actionOptions
+                : [];
+
     return (
-        <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+        <div className="px-4 py-6">
+            <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onBack}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={onBack}
+                    >
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div>
-                        <p className="text-sm font-medium text-foreground">{workflow.name}</p>
+                        <h2 className="text-lg font-semibold tracking-tight">
+                            {workflow.name}
+                        </h2>
                         <p className="text-xs text-muted-foreground">
-                            {flowNodes.length} node{flowNodes.length !== 1 ? 's' : ''}
-                            {dirty && ' · Unsaved changes'}
+                            {steps.length} step{steps.length !== 1 ? 's' : ''}
+                            {dirty ? ' · Unsaved' : ''}
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <AddNodePanel onAdd={addNode} />
-                    <Button size="sm" onClick={save} disabled={!dirty || saving}>
-                        {saving && <Spinner />}
-                        Save
-                    </Button>
-                </div>
+                <Button size="sm" onClick={save} disabled={!dirty || saving}>
+                    {saving && <Spinner />}
+                    Save
+                </Button>
             </div>
 
-            <div className="relative flex-1">
-                <ReactFlow
-                    nodes={flowNodes}
-                    edges={flowEdges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onConnect={onConnect}
-                    nodeTypes={nodeTypes}
-                    defaultEdgeOptions={defaultEdgeOptions}
-                    fitView
-                    className="!bg-background"
-                    proOptions={{ hideAttribution: true }}
-                >
-                    <Background gap={20} size={1} className="!stroke-border/30" />
-                    <Controls
-                        showInteractive={false}
-                        className="!rounded-lg !border !border-border/50 !bg-background !shadow-lg [&>button]:!border-border/30 [&>button]:!bg-background [&>button]:!text-muted-foreground [&>button:hover]:!bg-muted"
-                    />
-                </ReactFlow>
+            <div className="rounded-md bg-sidebar p-1">
+                <div className="rounded-md border border-sidebar-accent bg-background p-6">
+                    {steps.length > 0 ? (
+                        <div>
+                            {steps.map((step, index) => (
+                                <StepRow
+                                    key={step.id}
+                                    step={step}
+                                    index={index}
+                                    isLast={index === steps.length - 1}
+                                    onUpdate={(s) => updateStep(index, s)}
+                                    onRemove={() => removeStep(index)}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-dashed border-sidebar-border/70 px-4 py-8 text-center dark:border-sidebar-border">
+                            <p className="text-xs text-muted-foreground">
+                                No steps yet. Add a trigger to start.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Add step buttons */}
+                    <div className="mt-4 flex items-center gap-2">
+                        {addingType ? (
+                            <div className="flex flex-1 flex-wrap gap-2">
+                                {addOptions.map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() =>
+                                            addStep(addingType, opt.value)
+                                        }
+                                        className="rounded-md border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => setAddingType(null)}
+                                    className="rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setAddingType('trigger')}
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Trigger
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setAddingType('condition')}
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Condition
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setAddingType('action')}
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Action
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -448,8 +563,9 @@ function WorkflowCard({
 }) {
     const [deleting, setDeleting] = useState(false);
     const [toggling, setToggling] = useState(false);
-    const triggerCount = (workflow.nodes ?? []).filter((n: Node) => n.type === 'trigger').length;
-    const actionCount = (workflow.nodes ?? []).filter((n: Node) => n.type === 'action').length;
+    const steps = (workflow.nodes as StepData[]) ?? [];
+    const triggerCount = steps.filter((s) => s.type === 'trigger').length;
+    const actionCount = steps.filter((s) => s.type === 'action').length;
 
     const handleToggle = (enabled: boolean) => {
         setToggling(true);
@@ -458,7 +574,10 @@ function WorkflowCard({
             { enabled },
             {
                 preserveScroll: true,
-                onSuccess: () => toast.success(enabled ? 'Workflow enabled.' : 'Workflow disabled.'),
+                onSuccess: () =>
+                    toast.success(
+                        enabled ? 'Workflow enabled.' : 'Workflow disabled.',
+                    ),
                 onFinish: () => setToggling(false),
             },
         );
@@ -466,11 +585,14 @@ function WorkflowCard({
 
     const handleDelete = () => {
         setDeleting(true);
-        router.delete(destroy.url({ server: serverId, workflow: workflow.id }), {
-            preserveScroll: true,
-            onSuccess: () => toast.success('Workflow deleted.'),
-            onFinish: () => setDeleting(false),
-        });
+        router.delete(
+            destroy.url({ server: serverId, workflow: workflow.id }),
+            {
+                preserveScroll: true,
+                onSuccess: () => toast.success('Workflow deleted.'),
+                onFinish: () => setDeleting(false),
+            },
+        );
     };
 
     return (
@@ -484,7 +606,11 @@ function WorkflowCard({
                     patternSize={4}
                     className="pointer-events-none absolute inset-0 size-full stroke-current opacity-[0.12]"
                 />
-                <Zap className="relative h-4 w-4" />
+                <div className="relative flex flex-col items-center gap-0.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    <span className="h-3 w-px bg-border/60" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+                </div>
             </button>
             <button
                 type="button"
@@ -492,18 +618,19 @@ function WorkflowCard({
                 className="min-w-0 flex-1 pl-2 text-left"
             >
                 <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground truncate">{workflow.name}</span>
+                    <span className="truncate text-sm font-medium text-foreground">
+                        {workflow.name}
+                    </span>
                     {!workflow.enabled && (
                         <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                             Disabled
                         </span>
                     )}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{triggerCount} trigger{triggerCount !== 1 ? 's' : ''}</span>
-                    <span>·</span>
-                    <span>{actionCount} action{actionCount !== 1 ? 's' : ''}</span>
-                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                    {triggerCount} trigger{triggerCount !== 1 ? 's' : ''} ·{' '}
+                    {actionCount} action{actionCount !== 1 ? 's' : ''}
+                </p>
             </button>
             <div className="flex items-center gap-2 pr-3">
                 <Switch
@@ -513,18 +640,32 @@ function WorkflowCard({
                 />
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={onOpen}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={onOpen}
+                        >
                             <Pencil className="h-3.5 w-3.5" />
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Edit workflow</TooltipContent>
+                    <TooltipContent>Edit</TooltipContent>
                 </Tooltip>
                 <AlertDialog>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" disabled={deleting}>
-                                    {deleting ? <Spinner className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground"
+                                    disabled={deleting}
+                                >
+                                    {deleting ? (
+                                        <Spinner className="h-3.5 w-3.5" />
+                                    ) : (
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    )}
                                 </Button>
                             </AlertDialogTrigger>
                         </TooltipTrigger>
@@ -532,12 +673,18 @@ function WorkflowCard({
                     </Tooltip>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Delete {workflow.name}</AlertDialogTitle>
-                            <AlertDialogDescription>This workflow and all its automation rules will be permanently deleted.</AlertDialogDescription>
+                            <AlertDialogTitle>
+                                Delete {workflow.name}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This workflow will be permanently deleted.
+                            </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                            <AlertDialogAction onClick={handleDelete}>
+                                Delete
+                            </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
@@ -561,7 +708,8 @@ function CreateWorkflowDialog({ serverId }: { serverId: number }) {
                 setOpen(false);
                 toast.success('Workflow created.');
             },
-            onError: (errors) => Object.values(errors).forEach((m) => toast.error(m)),
+            onError: (errors) =>
+                Object.values(errors).forEach((m) => toast.error(m)),
         });
     };
 
@@ -578,15 +726,18 @@ function CreateWorkflowDialog({ serverId }: { serverId: number }) {
                     <DialogHeader>
                         <DialogTitle>Create workflow</DialogTitle>
                         <DialogDescription>
-                            Workflows automate actions on your server using triggers, conditions, and actions.
+                            Automate server tasks with triggers, conditions, and
+                            actions.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="mt-4 grid gap-2">
-                        <Label htmlFor="wf-name">Workflow name</Label>
+                        <Label htmlFor="wf-name">Name</Label>
                         <Input
                             id="wf-name"
                             value={form.data.name}
-                            onChange={(event) => form.setData('name', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('name', event.target.value)
+                            }
                             placeholder="Auto-restart on crash"
                             maxLength={255}
                             required
@@ -616,22 +767,21 @@ export default function ServerWorkflows({ server, workflows }: Props) {
         { title: 'Workflows', href: `/server/${server.id}/workflows` },
     ];
 
-    const editingWorkflow = editingId !== null
-        ? workflows.find((w) => w.id === editingId) ?? null
-        : null;
+    const editingWorkflow =
+        editingId !== null
+            ? workflows.find((w) => w.id === editingId) ?? null
+            : null;
 
     if (editingWorkflow) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title={`${server.name} — ${editingWorkflow.name}`} />
-                <div className="flex h-[calc(100vh-4rem)] flex-col">
-                    <WorkflowEditor
-                        key={editingWorkflow.id}
-                        workflow={editingWorkflow}
-                        serverId={server.id}
-                        onBack={() => setEditingId(null)}
-                    />
-                </div>
+                <WorkflowEditor
+                    key={editingWorkflow.id}
+                    workflow={editingWorkflow}
+                    serverId={server.id}
+                    onBack={() => setEditingId(null)}
+                />
             </AppLayout>
         );
     }
@@ -646,37 +796,38 @@ export default function ServerWorkflows({ server, workflows }: Props) {
                     description="Automate server tasks with triggers, conditions, and actions."
                 />
 
-                <div className="space-y-4">
-                    <div className="rounded-md bg-sidebar p-1">
-                        <div className="rounded-md border border-sidebar-accent bg-background p-6">
-                            <div className="flex items-center justify-between">
-                                <Heading
-                                    variant="small"
-                                    title="Automations"
-                                    description="Create workflows to automate commands, power actions, backups, and more."
-                                />
-                                <CreateWorkflowDialog serverId={server.id} />
-                            </div>
-
-                            {workflows.length > 0 ? (
-                                <div className="mt-4 grid gap-2">
-                                    {workflows.map((workflow) => (
-                                        <WorkflowCard
-                                            key={workflow.id}
-                                            workflow={workflow}
-                                            serverId={server.id}
-                                            onOpen={() => setEditingId(workflow.id)}
-                                        />
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="mt-4 rounded-xl border border-dashed border-sidebar-border/70 px-4 py-8 text-center dark:border-sidebar-border">
-                                    <p className="text-xs text-muted-foreground">
-                                        No workflows yet. Create one to automate your server.
-                                    </p>
-                                </div>
-                            )}
+                <div className="rounded-md bg-sidebar p-1">
+                    <div className="rounded-md border border-sidebar-accent bg-background p-6">
+                        <div className="flex items-center justify-between">
+                            <Heading
+                                variant="small"
+                                title="Automations"
+                                description="Workflows run automatically based on triggers you define."
+                            />
+                            <CreateWorkflowDialog serverId={server.id} />
                         </div>
+
+                        {workflows.length > 0 ? (
+                            <div className="mt-4 grid gap-2">
+                                {workflows.map((workflow) => (
+                                    <WorkflowCard
+                                        key={workflow.id}
+                                        workflow={workflow}
+                                        serverId={server.id}
+                                        onOpen={() =>
+                                            setEditingId(workflow.id)
+                                        }
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="mt-4 rounded-xl border border-dashed border-sidebar-border/70 px-4 py-8 text-center dark:border-sidebar-border">
+                                <p className="text-xs text-muted-foreground">
+                                    No workflows yet. Create one to automate
+                                    your server.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
