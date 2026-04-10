@@ -26,6 +26,7 @@
         "sidebar-accent-foreground": "oklch(0.985 0 0)",
         "sidebar-border": "oklch(0.269 0 0)",
         "brand": "#d92400",
+        "brand-foreground": "#ffffff",
         "brand-muted": "rgba(217, 36, 0, 0.1)"
     },
     "swatches": ["#d92400", "#1a1a1a", "#262626", "#b3b3b3"]

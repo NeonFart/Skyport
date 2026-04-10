@@ -1,0 +1,33 @@
+{
+    "name": "Dinosaur",
+    "description": "Pterodactyl's blue-gray palette, faithfully recreated.",
+    "variables": {
+        "background": "#131a20",
+        "foreground": "#e2e5e9",
+        "card": "#131a20",
+        "card-foreground": "#e2e5e9",
+        "popover": "#1f2937",
+        "popover-foreground": "#e2e5e9",
+        "primary": "#e2e5e9",
+        "primary-foreground": "#131a20",
+        "secondary": "#1f2937",
+        "secondary-foreground": "#e2e5e9",
+        "muted": "#1f2937",
+        "muted-foreground": "#7a8391",
+        "accent": "#1f2937",
+        "accent-foreground": "#e2e5e9",
+        "destructive": "#ef4444",
+        "border": "#334155",
+        "input": "#334155",
+        "ring": "#515c6b",
+        "sidebar": "#1f2937",
+        "sidebar-foreground": "#e2e5e9",
+        "sidebar-accent": "#334155",
+        "sidebar-accent-foreground": "#e2e5e9",
+        "sidebar-border": "#334155",
+        "brand": "#2563eb",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(37, 99, 235, 0.12)"
+    },
+    "swatches": ["#2563eb", "#131a20", "#334155", "#7a8391"]
+}
