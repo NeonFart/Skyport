@@ -40,6 +40,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { SlidingTabs } from '@/components/ui/sliding-tabs';
 import type { Tab } from '@/components/ui/sliding-tabs';
 import { Spinner } from '@/components/ui/spinner';
@@ -208,6 +209,7 @@ function OptionSelect({
     options,
     placeholder,
     renderLabel,
+    renderDescription,
     disabled = false,
 }: {
     value: number | '';
@@ -215,34 +217,23 @@ function OptionSelect({
     options: Array<{ id: number }>;
     placeholder: string;
     renderLabel: (option: any) => string;
+    renderDescription?: (option: any) => string | undefined;
     disabled?: boolean;
 }) {
-    const selected = options.find((option) => option.id === value);
+    const searchableOptions = options.map((option) => ({
+        value: String(option.id),
+        label: renderLabel(option),
+        description: renderDescription?.(option),
+    }));
 
     return (
-        <Select
+        <SearchableSelect
+            options={searchableOptions}
             value={value === '' ? '' : String(value)}
-            onValueChange={(selectedValue) => onChange(Number(selectedValue))}
+            onValueChange={(v) => onChange(Number(v))}
+            placeholder={placeholder}
             disabled={disabled}
-        >
-            <SelectTrigger className="w-full">
-                <span
-                    className={cn(
-                        'truncate',
-                        !selected && 'text-muted-foreground',
-                    )}
-                >
-                    {selected ? renderLabel(selected) : placeholder}
-                </span>
-            </SelectTrigger>
-            <SelectContent>
-                {options.map((option) => (
-                    <SelectItem key={option.id} value={String(option.id)}>
-                        {renderLabel(option)}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        />
     );
 }
 
@@ -296,9 +287,8 @@ function ServerFormFields({
                     onChange={(value) => setData('user_id', value)}
                     options={users}
                     placeholder="Choose a user"
-                    renderLabel={(user: UserOption) =>
-                        `${user.name} · ${user.email}`
-                    }
+                    renderLabel={(user: UserOption) => user.name}
+                    renderDescription={(user: UserOption) => user.email}
                 />
                 <InputError message={errors.user_id} />
             </div>
@@ -620,18 +610,13 @@ function TransferTab({
             </div>
             <div className="grid gap-2">
                 <Label>Target node</Label>
-                <Select value={targetNodeId} onValueChange={(v) => { setTargetNodeId(v); setTargetAllocationId(''); }}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a node" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {otherNodes.map((n) => (
-                            <SelectItem key={n.id} value={String(n.id)}>
-                                {n.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <SearchableSelect
+                    options={otherNodes.map((n) => ({ value: String(n.id), label: n.name }))}
+                    value={targetNodeId}
+                    onValueChange={(v) => { setTargetNodeId(v); setTargetAllocationId(''); }}
+                    placeholder="Select a node"
+                    searchPlaceholder="Search nodes…"
+                />
             </div>
             {targetNodeId && (
                 <div className="grid gap-2">
