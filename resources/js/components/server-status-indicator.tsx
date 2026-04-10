@@ -29,12 +29,36 @@ export default function ServerStatusIndicator({
     status,
     className,
     tooltipContent,
+    bare,
 }: {
     status: string;
     className?: string;
     tooltipContent?: ReactNode;
+    bare?: boolean;
 }) {
     const label = statusLabel(status);
+
+    const dot = (
+        <span
+            className={cn(
+                'inline-flex items-center justify-center rounded-full',
+                bare ? className : 'h-4 w-4',
+                bare && className,
+            )}
+            aria-label={`Server status: ${label}`}
+        >
+            <span
+                className={cn(
+                    'relative flex h-2 w-2 items-center justify-center rounded-full ring-4',
+                    serverStatusDotTone(status),
+                )}
+            />
+        </span>
+    );
+
+    if (bare) {
+        return dot;
+    }
 
     return (
         <Tooltip>
