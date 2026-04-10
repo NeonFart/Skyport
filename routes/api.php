@@ -3,6 +3,7 @@
 use App\Http\Controllers\Daemon\ConfigurationController;
 use App\Http\Controllers\Daemon\HeartbeatController;
 use App\Http\Controllers\Daemon\ServerRuntimeController;
+use App\Http\Controllers\Daemon\SftpAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('daemon')
@@ -19,4 +20,8 @@ Route::prefix('daemon')
             ServerRuntimeController::class,
             'store',
         ])->name('servers.runtime');
+        Route::post('sftp/auth', [
+            SftpAuthController::class,
+            'store',
+        ])->name('sftp.auth');
     });

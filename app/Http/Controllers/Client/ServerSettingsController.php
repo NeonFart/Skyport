@@ -65,6 +65,10 @@ class ServerSettingsController extends Controller
                     'online' => $server->node->isOnline(),
                 ],
                 'status' => $server->status,
+                'sftp' => [
+                    'host' => $server->node->fqdn,
+                    'port' => $server->node->sftp_port,
+                ],
             ],
         ]);
     }

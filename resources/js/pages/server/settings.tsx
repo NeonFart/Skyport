@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import {
     show,
     updateGeneral,
@@ -20,10 +20,16 @@ import { SlidingTabs } from '@/components/ui/sliding-tabs';
 import type { Tab } from '@/components/ui/sliding-tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from '@/components/ui/sonner';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { home } from '@/routes';
 import { console as serverConsole } from '@/routes/client/servers';
 import type { BreadcrumbItem } from '@/types';
+import { Copy } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 type DockerImageOption = {
@@ -47,6 +53,10 @@ type Props = {
         id: number;
         name: string;
         status: string;
+        sftp: {
+            host: string;
+            port: number;
+        };
     };
 };
 
@@ -61,6 +71,7 @@ type StartupFormData = {
 const pageTabs: Tab[] = [
     { id: 'general', label: 'General' },
     { id: 'startup', label: 'Startup' },
+    { id: 'sftp', label: 'SFTP' },
 ];
 
 function SettingsPanel({ children }: { children: React.ReactNode }) {
@@ -359,8 +370,101 @@ export default function ServerSettings({ server }: Props) {
                             </SettingsPanel>
                         </form>
                     ) : null}
+
+                    {tab === 'sftp' ? (
+                        <SftpTab server={server} />
+                    ) : null}
                 </div>
             </div>
         </AppLayout>
+    );
+}
+
+function copyToClipboard(text: string) {
+    void navigator.clipboard.writeText(text).then(() => {
+        toast.success('Copied to clipboard.');
+    });
+}
+
+function SftpDetailRow({
+    label,
+    value,
+}: {
+    label: string;
+    value: string;
+}) {
+    return (
+        <div className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-4 py-3">
+            <div>
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <code className="text-sm font-medium text-foreground">
+                    {value}
+                </code>
+            </div>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground"
+                        onClick={() => copyToClipboard(value)}
+                    >
+                        <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Copy</TooltipContent>
+            </Tooltip>
+        </div>
+    );
+}
+
+function SftpTab({
+    server,
+}: {
+    server: Props['server'];
+}) {
+    const page = usePage();
+    const userEmail = (page.props as { auth: { user: { email: string } } }).auth
+        .user.email;
+    const sftpUsername = `${userEmail}.${server.id}`;
+    const sftpAddress = `${server.sftp.host}:${server.sftp.port}`;
+    const sftpUrl = `sftp://${sftpUsername}@${server.sftp.host}:${server.sftp.port}`;
+
+    return (
+        <div className="space-y-4">
+            <SettingsPanel>
+                <Heading
+                    variant="small"
+                    title="SFTP connection"
+                    description="Connect to this server's files using an SFTP client."
+                />
+
+                <div className="mt-6 max-w-xl space-y-3">
+                    <SftpDetailRow label="Server address" value={sftpAddress} />
+                    <SftpDetailRow label="Username" value={sftpUsername} />
+                    <div className="rounded-md border border-border/70 bg-muted/20 px-4 py-3">
+                        <p className="text-xs text-muted-foreground">
+                            Password
+                        </p>
+                        <p className="text-sm text-foreground">
+                            Your panel account password.
+                        </p>
+                    </div>
+                </div>
+            </SettingsPanel>
+
+            <div className="flex items-center gap-3">
+                <Button asChild>
+                    <a href={sftpUrl}>Open in SFTP client</a>
+                </Button>
+                <Button
+                    variant="secondary"
+                    onClick={() => copyToClipboard(sftpUrl)}
+                >
+                    <Copy className="h-4 w-4" />
+                    Copy connection URL
+                </Button>
+            </div>
+        </div>
     );
 }
