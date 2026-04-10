@@ -320,6 +320,7 @@ function ServerSidebarCard({
                                 <ServerStatusIndicator
                                     status={candidate.status ?? 'offline'}
                                     className="h-3.5 w-3.5 shrink-0"
+                                    bare
                                 />
                                 <span className="truncate text-sm font-medium">
                                     {candidate.name}

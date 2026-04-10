@@ -454,8 +454,10 @@ function SftpTab({
             </SettingsPanel>
 
             <div className="flex items-center gap-3">
-                <Button asChild>
-                    <a href={sftpUrl}>Open in SFTP client</a>
+                <Button
+                    onClick={() => window.open(sftpUrl, '_self')}
+                >
+                    Open in SFTP client
                 </Button>
                 <Button
                     variant="secondary"
