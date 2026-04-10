@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Ellipsis, Play, RotateCw, Square, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     console as serverConsole,
     power as powerServer,
@@ -337,6 +337,26 @@ function ServerSidebarCard({
     );
 }
 
+type SidebarContext = 'home' | 'server' | 'admin';
+
+function sidebarContextFor(url: string, isAdmin: boolean): SidebarContext {
+    if (isAdmin && url.startsWith('/admin')) {
+        return 'admin';
+    }
+
+    if (url.startsWith('/server/')) {
+        return 'server';
+    }
+
+    return 'home';
+}
+
+const contextDepth: Record<SidebarContext, number> = {
+    home: 0,
+    admin: 1,
+    server: 1,
+};
+
 export function AppSidebar() {
     const page = usePage();
     const { auth, name, server, serverSwitcher } =
@@ -348,6 +368,39 @@ export function AppSidebar() {
     const isServerSidebar = page.url.startsWith('/server/');
     const adminDashboardHref = '/admin';
     const adminActivityHref = '/admin/activity';
+
+    const currentContext = sidebarContextFor(page.url, auth.user.is_admin);
+    const prevContextRef = useRef<SidebarContext>(currentContext);
+    const [slideDirection, setSlideDirection] = useState<'none' | 'left' | 'right'>('none');
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    useEffect(() => {
+        const prev = prevContextRef.current;
+
+        if (prev !== currentContext) {
+            const prevDepth = contextDepth[prev];
+            const nextDepth = contextDepth[currentContext];
+
+            if (nextDepth > prevDepth) {
+                setSlideDirection('right');
+            } else if (nextDepth < prevDepth) {
+                setSlideDirection('left');
+            } else if (prev !== currentContext) {
+                // Same depth but different context (e.g. admin <-> server)
+                setSlideDirection(prev === 'admin' ? 'left' : 'right');
+            }
+
+            setIsAnimating(true);
+            prevContextRef.current = currentContext;
+
+            const timeout = setTimeout(() => {
+                setIsAnimating(false);
+                setSlideDirection('none');
+            }, 250);
+
+            return () => clearTimeout(timeout);
+        }
+    }, [currentContext]);
     const availableServers = serverSwitcher ?? [];
     const mainNavItems: NavItem[] = isAdminSidebar
         ? [
@@ -465,24 +518,36 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                {isServerSidebar && server ? (
-                    <ServerSidebarCard
-                        currentUrl={page.url}
-                        server={server}
-                        servers={availableServers}
-                    />
-                ) : null}
+                <div
+                    className={cn(
+                        'flex flex-col transition-transform duration-250 ease-[cubic-bezier(0.22,1,0.36,1)]',
+                        isAnimating && slideDirection === 'right' && 'animate-slide-in-right',
+                        isAnimating && slideDirection === 'left' && 'animate-slide-in-left',
+                    )}
+                    style={{
+                        animationDuration: '250ms',
+                        animationFillMode: 'both',
+                    }}
+                >
+                    {isServerSidebar && server ? (
+                        <ServerSidebarCard
+                            currentUrl={page.url}
+                            server={server}
+                            servers={availableServers}
+                        />
+                    ) : null}
 
-                <NavMain
-                    items={mainNavItems}
-                    label={
-                        isAdminSidebar
-                            ? 'Admin'
-                            : isServerSidebar
-                              ? 'Server'
-                              : 'Platform'
-                    }
-                />
+                    <NavMain
+                        items={mainNavItems}
+                        label={
+                            isAdminSidebar
+                                ? 'Admin'
+                                : isServerSidebar
+                                  ? 'Server'
+                                  : 'Platform'
+                        }
+                    />
+                </div>
             </SidebarContent>
 
             <SidebarFooter>
