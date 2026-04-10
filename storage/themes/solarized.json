@@ -1,0 +1,38 @@
+{
+    "name": "Solarized Dark",
+    "description": "Ethan Schoonover's precision color scheme.",
+    "variables": {
+        "background": "#002b36",
+        "foreground": "#839496",
+        "card": "#002b36",
+        "card-foreground": "#839496",
+        "popover": "#073642",
+        "popover-foreground": "#839496",
+        "primary": "#93a1a1",
+        "primary-foreground": "#002b36",
+        "secondary": "#073642",
+        "secondary-foreground": "#839496",
+        "muted": "#073642",
+        "muted-foreground": "#586e75",
+        "accent": "#073642",
+        "accent-foreground": "#93a1a1",
+        "destructive": "#dc322f",
+        "border": "#094050",
+        "input": "#094050",
+        "ring": "#586e75",
+        "sidebar": "#073642",
+        "sidebar-foreground": "#839496",
+        "sidebar-accent": "#094050",
+        "sidebar-accent-foreground": "#93a1a1",
+        "sidebar-border": "#094050",
+        "brand": "#268bd2",
+        "brand-foreground": "#fdf6e3",
+        "brand-muted": "rgba(38, 139, 210, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#268bd2",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(38, 139, 210, 0.1)"
+    },
+    "swatches": ["#268bd2", "#002b36", "#073642", "#586e75"]
+}

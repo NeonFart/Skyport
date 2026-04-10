@@ -1,0 +1,38 @@
+{
+    "name": "One Dark",
+    "description": "Atom's signature dark theme.",
+    "variables": {
+        "background": "#282c34",
+        "foreground": "#abb2bf",
+        "card": "#282c34",
+        "card-foreground": "#abb2bf",
+        "popover": "#21252b",
+        "popover-foreground": "#abb2bf",
+        "primary": "#abb2bf",
+        "primary-foreground": "#282c34",
+        "secondary": "#2c313a",
+        "secondary-foreground": "#abb2bf",
+        "muted": "#2c313a",
+        "muted-foreground": "#5c6370",
+        "accent": "#2c313a",
+        "accent-foreground": "#abb2bf",
+        "destructive": "#e06c75",
+        "border": "#3e4451",
+        "input": "#3e4451",
+        "ring": "#4b5263",
+        "sidebar": "#21252b",
+        "sidebar-foreground": "#abb2bf",
+        "sidebar-accent": "#2c313a",
+        "sidebar-accent-foreground": "#abb2bf",
+        "sidebar-border": "#3e4451",
+        "brand": "#61afef",
+        "brand-foreground": "#282c34",
+        "brand-muted": "rgba(97, 175, 239, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#4078f2",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(64, 120, 242, 0.1)"
+    },
+    "swatches": ["#61afef", "#282c34", "#3e4451", "#5c6370"]
+}

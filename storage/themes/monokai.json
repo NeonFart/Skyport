@@ -1,0 +1,38 @@
+{
+    "name": "Monokai",
+    "description": "The iconic Sublime Text color scheme.",
+    "variables": {
+        "background": "#272822",
+        "foreground": "#f8f8f2",
+        "card": "#272822",
+        "card-foreground": "#f8f8f2",
+        "popover": "#1e1f1c",
+        "popover-foreground": "#f8f8f2",
+        "primary": "#f8f8f2",
+        "primary-foreground": "#272822",
+        "secondary": "#3e3d32",
+        "secondary-foreground": "#f8f8f2",
+        "muted": "#3e3d32",
+        "muted-foreground": "#75715e",
+        "accent": "#3e3d32",
+        "accent-foreground": "#f8f8f2",
+        "destructive": "#f92672",
+        "border": "#49483e",
+        "input": "#49483e",
+        "ring": "#75715e",
+        "sidebar": "#1e1f1c",
+        "sidebar-foreground": "#f8f8f2",
+        "sidebar-accent": "#3e3d32",
+        "sidebar-accent-foreground": "#f8f8f2",
+        "sidebar-border": "#49483e",
+        "brand": "#a6e22e",
+        "brand-foreground": "#272822",
+        "brand-muted": "rgba(166, 226, 46, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#4d7a0f",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(77, 122, 15, 0.1)"
+    },
+    "swatches": ["#a6e22e", "#272822", "#49483e", "#75715e"]
+}

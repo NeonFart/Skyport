@@ -1,0 +1,38 @@
+{
+    "name": "Rosé Pine",
+    "description": "All natural pine, faux fur, and a bit of soho vibes.",
+    "variables": {
+        "background": "#191724",
+        "foreground": "#e0def4",
+        "card": "#191724",
+        "card-foreground": "#e0def4",
+        "popover": "#1f1d2e",
+        "popover-foreground": "#e0def4",
+        "primary": "#e0def4",
+        "primary-foreground": "#191724",
+        "secondary": "#26233a",
+        "secondary-foreground": "#e0def4",
+        "muted": "#26233a",
+        "muted-foreground": "#6e6a86",
+        "accent": "#26233a",
+        "accent-foreground": "#e0def4",
+        "destructive": "#eb6f92",
+        "border": "#393552",
+        "input": "#393552",
+        "ring": "#524f67",
+        "sidebar": "#1f1d2e",
+        "sidebar-foreground": "#e0def4",
+        "sidebar-accent": "#26233a",
+        "sidebar-accent-foreground": "#e0def4",
+        "sidebar-border": "#393552",
+        "brand": "#c4a7e7",
+        "brand-foreground": "#191724",
+        "brand-muted": "rgba(196, 167, 231, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#907aa9",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(144, 122, 169, 0.1)"
+    },
+    "swatches": ["#c4a7e7", "#191724", "#393552", "#6e6a86"]
+}

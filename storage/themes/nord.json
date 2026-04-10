@@ -1,0 +1,38 @@
+{
+    "name": "Nord",
+    "description": "Arctic, north-bluish color palette.",
+    "variables": {
+        "background": "#2e3440",
+        "foreground": "#d8dee9",
+        "card": "#2e3440",
+        "card-foreground": "#d8dee9",
+        "popover": "#3b4252",
+        "popover-foreground": "#d8dee9",
+        "primary": "#d8dee9",
+        "primary-foreground": "#2e3440",
+        "secondary": "#3b4252",
+        "secondary-foreground": "#d8dee9",
+        "muted": "#3b4252",
+        "muted-foreground": "#7b88a1",
+        "accent": "#3b4252",
+        "accent-foreground": "#d8dee9",
+        "destructive": "#bf616a",
+        "border": "#434c5e",
+        "input": "#434c5e",
+        "ring": "#4c566a",
+        "sidebar": "#2e3440",
+        "sidebar-foreground": "#d8dee9",
+        "sidebar-accent": "#3b4252",
+        "sidebar-accent-foreground": "#d8dee9",
+        "sidebar-border": "#434c5e",
+        "brand": "#88c0d0",
+        "brand-foreground": "#2e3440",
+        "brand-muted": "rgba(136, 192, 208, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#5e81ac",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(94, 129, 172, 0.1)"
+    },
+    "swatches": ["#88c0d0", "#2e3440", "#434c5e", "#7b88a1"]
+}

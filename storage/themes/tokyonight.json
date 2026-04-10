@@ -1,0 +1,38 @@
+{
+    "name": "Tokyo Night",
+    "description": "A clean dark theme that celebrates the lights of Tokyo.",
+    "variables": {
+        "background": "#1a1b26",
+        "foreground": "#a9b1d6",
+        "card": "#1a1b26",
+        "card-foreground": "#a9b1d6",
+        "popover": "#16161e",
+        "popover-foreground": "#a9b1d6",
+        "primary": "#a9b1d6",
+        "primary-foreground": "#1a1b26",
+        "secondary": "#24283b",
+        "secondary-foreground": "#a9b1d6",
+        "muted": "#24283b",
+        "muted-foreground": "#565f89",
+        "accent": "#24283b",
+        "accent-foreground": "#a9b1d6",
+        "destructive": "#f7768e",
+        "border": "#292e42",
+        "input": "#292e42",
+        "ring": "#3b4261",
+        "sidebar": "#16161e",
+        "sidebar-foreground": "#a9b1d6",
+        "sidebar-accent": "#24283b",
+        "sidebar-accent-foreground": "#a9b1d6",
+        "sidebar-border": "#292e42",
+        "brand": "#7aa2f7",
+        "brand-foreground": "#1a1b26",
+        "brand-muted": "rgba(122, 162, 247, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#2e7de9",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(46, 125, 233, 0.1)"
+    },
+    "swatches": ["#7aa2f7", "#1a1b26", "#292e42", "#565f89"]
+}

@@ -1,0 +1,38 @@
+{
+    "name": "Gruvbox",
+    "description": "Retro groove color scheme for Vim.",
+    "variables": {
+        "background": "#282828",
+        "foreground": "#ebdbb2",
+        "card": "#282828",
+        "card-foreground": "#ebdbb2",
+        "popover": "#1d2021",
+        "popover-foreground": "#ebdbb2",
+        "primary": "#ebdbb2",
+        "primary-foreground": "#282828",
+        "secondary": "#3c3836",
+        "secondary-foreground": "#ebdbb2",
+        "muted": "#3c3836",
+        "muted-foreground": "#928374",
+        "accent": "#3c3836",
+        "accent-foreground": "#ebdbb2",
+        "destructive": "#cc241d",
+        "border": "#504945",
+        "input": "#504945",
+        "ring": "#665c54",
+        "sidebar": "#1d2021",
+        "sidebar-foreground": "#ebdbb2",
+        "sidebar-accent": "#3c3836",
+        "sidebar-accent-foreground": "#ebdbb2",
+        "sidebar-border": "#504945",
+        "brand": "#fe8019",
+        "brand-foreground": "#282828",
+        "brand-muted": "rgba(254, 128, 25, 0.12)"
+    },
+    "light_variables": {
+        "brand": "#d65d0e",
+        "brand-foreground": "#ffffff",
+        "brand-muted": "rgba(214, 93, 14, 0.1)"
+    },
+    "swatches": ["#fe8019", "#282828", "#504945", "#928374"]
+}
