@@ -281,6 +281,14 @@ class AppSettingsService
             ];
         }
 
+        usort($themes, function (array $a, array $b): int {
+            $priority = ['magma' => 0, 'classic' => 1];
+            $pa = $priority[$a['id']] ?? 99;
+            $pb = $priority[$b['id']] ?? 99;
+
+            return $pa <=> $pb ?: strcmp($a['name'], $b['name']);
+        });
+
         return $themes;
     }
 

@@ -1,5 +1,5 @@
 {
-    "name": "Classic",
+    "name": "Skyport Classic (v0.x)",
     "description": "Clean monochrome with light grays.",
     "variables": {
         "background": "oklch(0.16 0 0)",

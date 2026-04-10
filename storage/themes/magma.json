@@ -1,5 +1,5 @@
 {
-    "name": "Magma",
+    "name": "Skyport Magma (v1.x)",
     "description": "The default Skyport theme with warm orange accents.",
     "variables": {
         "background": "oklch(0.145 0 0)",
