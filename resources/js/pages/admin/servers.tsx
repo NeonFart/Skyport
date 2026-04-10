@@ -10,9 +10,9 @@ import {
     store,
     update,
     transfer as transferRoute,
-    cancelTransfer as cancelTransferRoute,
     updateStartup as updateStartupRoute,
 } from '@/routes/admin/servers';
+import { cancel as cancelTransferRoute } from '@/routes/admin/servers/transfer';
 import { ConfirmDeleteDialog, DataTable } from '@/components/admin/data-table';
 import type { Column, PaginatedData } from '@/components/admin/data-table';
 import InputError from '@/components/input-error';
