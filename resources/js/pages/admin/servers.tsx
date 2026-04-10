@@ -79,6 +79,8 @@ type AdminServer = {
     memory_mib: number;
     cpu_limit: number;
     disk_mib: number;
+    backup_limit: number;
+    allocation_limit: number | null;
     startup_command: string;
     startup_command_override: string | null;
     docker_image_override: string | null;
@@ -111,6 +113,8 @@ type ServerFormData = {
     memory_mib: number;
     cpu_limit: number;
     disk_mib: number;
+    backup_limit: number;
+    allocation_limit: number | '';
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -379,6 +383,36 @@ function ServerFormFields({
                     />
                     <InputError message={errors.disk_mib} />
                 </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="server-backup-limit">Backup limit</Label>
+                    <Input
+                        id="server-backup-limit"
+                        type="number"
+                        min={0}
+                        value={data.backup_limit}
+                        onChange={(event) =>
+                            setData('backup_limit', Number(event.target.value))
+                        }
+                        required
+                    />
+                    <p className="text-xs text-muted-foreground">0 = backups disabled</p>
+                    <InputError message={errors.backup_limit} />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="server-alloc-limit">Extra allocation limit</Label>
+                    <Input
+                        id="server-alloc-limit"
+                        type="number"
+                        min={0}
+                        value={data.allocation_limit}
+                        onChange={(event) =>
+                            setData('allocation_limit', event.target.value === '' ? '' : Number(event.target.value))
+                        }
+                        placeholder="Use global setting"
+                    />
+                    <p className="text-xs text-muted-foreground">Leave empty to use the global limit from settings.</p>
+                    <InputError message={errors.allocation_limit} />
+                </div>
             </div>
         </div>
     );
@@ -617,6 +651,8 @@ function ServerModal({
         memory_mib: server.memory_mib,
         cpu_limit: server.cpu_limit,
         disk_mib: server.disk_mib,
+        backup_limit: server.backup_limit,
+        allocation_limit: server.allocation_limit ?? '',
     });
     const minimumMs = 500;
     const submitStart = useRef(0);

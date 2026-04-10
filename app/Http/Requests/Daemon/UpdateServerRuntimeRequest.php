@@ -21,11 +21,15 @@ class UpdateServerRuntimeRequest extends FormRequest
             'uuid' => ['required', 'uuid'],
             'version' => ['required', 'string', 'max:50'],
             'status' => [
-                'required',
+                'nullable',
                 'string',
                 'in:installing,install_failed,offline,restarting,running,starting,stopping',
             ],
             'last_error' => ['nullable', 'string', 'max:65535'],
+            'backup_id' => ['nullable', 'integer'],
+            'backup_status' => ['nullable', 'string', 'in:completed,failed'],
+            'backup_size_bytes' => ['nullable', 'integer', 'min:0'],
+            'backup_error' => ['nullable', 'string', 'max:65535'],
         ];
     }
 }

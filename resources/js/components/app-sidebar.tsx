@@ -7,6 +7,7 @@ import {
     settings as serverSettings,
 } from '@/routes/client/servers';
 import AuditLogIcon from '@/components/audit-log-icon';
+import BackupsIcon from '@/components/backups-icon';
 import CargoIcon from '@/components/cargo-icon';
 import ConsoleIcon from '@/components/console-icon';
 import DashboardIcon from '@/components/dashboard-icon';
@@ -117,6 +118,10 @@ function serverHrefForPage(currentUrl: string, serverId: number): string {
     }
 
     if (/^\/server\/\d+\/users(?:\?.*)?$/u.test(currentUrl)) {
+        return currentUrl.replace(/^\/server\/\d+/u, `/server/${serverId}`);
+    }
+
+    if (/^\/server\/\d+\/backups(?:\?.*)?$/u.test(currentUrl)) {
         return currentUrl.replace(/^\/server\/\d+/u, `/server/${serverId}`);
     }
 
@@ -469,6 +474,11 @@ export function AppSidebar() {
                             href: `/server/${server.id}/networking/interconnect`,
                         },
                     ],
+                },
+                {
+                    title: 'Backups',
+                    href: `/server/${server.id}/backups`,
+                    icon: BackupsIcon,
                 },
                 {
                     title: 'Users',

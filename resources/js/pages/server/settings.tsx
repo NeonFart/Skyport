@@ -394,7 +394,7 @@ function SftpDetailRow({
     value: string;
 }) {
     return (
-        <div className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-4 py-3">
+        <div className="flex items-center justify-between rounded-md bg-muted/20 px-4 py-3">
             <div>
                 <p className="text-xs text-muted-foreground">{label}</p>
                 <code className="text-sm font-medium text-foreground">
@@ -436,20 +436,12 @@ function SftpTab({
                 <Heading
                     variant="small"
                     title="SFTP connection"
-                    description="Connect to this server's files using an SFTP client."
+                    description="Connect to this server's files using an SFTP client. Use the same password you use to log into the Panel to authorize SFTP access."
                 />
 
                 <div className="mt-6 max-w-xl space-y-3">
                     <SftpDetailRow label="Server address" value={sftpAddress} />
                     <SftpDetailRow label="Username" value={sftpUsername} />
-                    <div className="rounded-md border border-border/70 bg-muted/20 px-4 py-3">
-                        <p className="text-xs text-muted-foreground">
-                            Password
-                        </p>
-                        <p className="text-sm text-foreground">
-                            Your panel account password.
-                        </p>
-                    </div>
                 </div>
             </SettingsPanel>
 

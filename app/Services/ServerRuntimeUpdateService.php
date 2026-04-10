@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Backup;
 use App\Models\NodeCredential;
 use App\Models\Server;
 use InvalidArgumentException;
@@ -41,6 +42,27 @@ class ServerRuntimeUpdateService
             throw new InvalidArgumentException(
                 'The server does not belong to this node.',
             );
+        }
+
+        // Handle backup status updates
+        if (isset($payload['backup_id']) && isset($payload['backup_status'])) {
+            $backup = Backup::query()
+                ->where('id', $payload['backup_id'])
+                ->where('server_id', $server->id)
+                ->first();
+
+            if ($backup) {
+                $backup->update([
+                    'status' => $payload['backup_status'],
+                    'size_bytes' => $payload['backup_size_bytes'] ?? $backup->size_bytes,
+                    'error' => $payload['backup_error'] ?? null,
+                    'completed_at' => $payload['backup_status'] === 'completed' ? now() : $backup->completed_at,
+                ]);
+            }
+
+            if (! isset($payload['status']) || $payload['status'] === null) {
+                return $server;
+            }
         }
 
         $server

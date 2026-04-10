@@ -62,8 +62,9 @@ class ServerAllocationsController extends Controller
             ],
             'allocations' => $allocations,
             'allocationsEnabled' => $this->appSettingsService->allocationsEnabled(),
-            'allocationsLimit' => $this->appSettingsService->allocationsLimit(),
+            'allocationsLimit' => $server->allocation_limit ?? $this->appSettingsService->allocationsLimit(),
             'currentAllocationCount' => count($allocations) - 1,
+            'usesGlobalLimit' => $server->allocation_limit === null,
         ]);
     }
 
@@ -78,7 +79,7 @@ class ServerAllocationsController extends Controller
             ->where('server_id', $server->id)
             ->where('id', '!=', $server->allocation_id)
             ->count();
-        $limit = $this->appSettingsService->allocationsLimit();
+        $limit = $server->allocation_limit ?? $this->appSettingsService->allocationsLimit();
 
         abort_unless($extraCount < $limit, 422, 'You have reached the maximum number of extra allocations.');
 

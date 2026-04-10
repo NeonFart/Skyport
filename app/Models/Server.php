@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
         'memory_mib',
         'cpu_limit',
         'disk_mib',
+        'backup_limit',
+        'allocation_limit',
         'status',
         'last_error',
     ]),
@@ -67,6 +69,11 @@ class Server extends Model
         return $this->belongsToMany(Interconnect::class)->withTimestamps();
     }
 
+    public function backups(): HasMany
+    {
+        return $this->hasMany(Backup::class);
+    }
+
     public function serverUsers(): HasMany
     {
         return $this->hasMany(ServerUser::class);
@@ -78,6 +85,8 @@ class Server extends Model
             'memory_mib' => 'integer',
             'cpu_limit' => 'integer',
             'disk_mib' => 'integer',
+            'backup_limit' => 'integer',
+            'allocation_limit' => 'integer',
         ];
     }
 }

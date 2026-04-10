@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\PasskeyAuthenticationController;
 use App\Http\Controllers\Client\ServerAllocationsController;
+use App\Http\Controllers\Client\ServerBackupsController;
 use App\Http\Controllers\Client\ServerConsoleController;
 use App\Http\Controllers\Client\ServerFilesController;
 use App\Http\Controllers\Client\ServerFirewallController;
@@ -85,6 +86,22 @@ Route::middleware(['auth'])->group(function () {
         ServerFirewallController::class,
         'destroy',
     ])->name('client.servers.firewall.destroy');
+    Route::get('server/{server}/backups', [
+        ServerBackupsController::class,
+        'index',
+    ])->name('client.servers.backups');
+    Route::post('server/{server}/backups', [
+        ServerBackupsController::class,
+        'store',
+    ])->name('client.servers.backups.store');
+    Route::post('server/{server}/backups/{backup}/restore', [
+        ServerBackupsController::class,
+        'restore',
+    ])->name('client.servers.backups.restore');
+    Route::delete('server/{server}/backups/{backup}', [
+        ServerBackupsController::class,
+        'destroy',
+    ])->name('client.servers.backups.destroy');
     Route::get('server/{server}/users', [
         ServerUsersController::class,
         'index',

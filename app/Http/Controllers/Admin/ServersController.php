@@ -140,6 +140,8 @@ class ServersController extends Controller
                     'cpu_limit' => $server->cpu_limit,
                     'created_at' => $server->created_at?->toIso8601String(),
                     'disk_mib' => $server->disk_mib,
+                    'backup_limit' => $server->backup_limit,
+                    'allocation_limit' => $server->allocation_limit,
                     'id' => $server->id,
                     'last_error' => $server->last_error,
                     'memory_mib' => $server->memory_mib,

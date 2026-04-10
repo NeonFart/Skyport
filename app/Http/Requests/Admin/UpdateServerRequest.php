@@ -33,6 +33,8 @@ class UpdateServerRequest extends FormRequest
             'memory_mib' => ['required', 'integer', 'min:1'],
             'cpu_limit' => ['required', 'integer', 'min:0'],
             'disk_mib' => ['required', 'integer', 'min:1'],
+            'backup_limit' => ['sometimes', 'integer', 'min:0'],
+            'allocation_limit' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
