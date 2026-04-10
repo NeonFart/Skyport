@@ -11,6 +11,7 @@ use App\Http\Controllers\Client\ServerPowerController;
 use App\Http\Controllers\Client\ServerSettingsController;
 use App\Http\Controllers\Client\ServerUsersController;
 use App\Http\Controllers\Client\ServerWebsocketController;
+use App\Http\Controllers\Client\ServerWorkflowsController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -86,6 +87,22 @@ Route::middleware(['auth'])->group(function () {
         ServerFirewallController::class,
         'destroy',
     ])->name('client.servers.firewall.destroy');
+    Route::get('server/{server}/workflows', [
+        ServerWorkflowsController::class,
+        'index',
+    ])->name('client.servers.workflows');
+    Route::post('server/{server}/workflows', [
+        ServerWorkflowsController::class,
+        'store',
+    ])->name('client.servers.workflows.store');
+    Route::patch('server/{server}/workflows/{workflow}', [
+        ServerWorkflowsController::class,
+        'update',
+    ])->name('client.servers.workflows.update');
+    Route::delete('server/{server}/workflows/{workflow}', [
+        ServerWorkflowsController::class,
+        'destroy',
+    ])->name('client.servers.workflows.destroy');
     Route::get('server/{server}/backups', [
         ServerBackupsController::class,
         'index',

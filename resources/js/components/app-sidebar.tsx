@@ -20,6 +20,7 @@ import ServerIcon from '@/components/server-icon';
 import ServerStatusIndicator from '@/components/server-status-indicator';
 
 import ServerUsersIcon from '@/components/server-users-icon';
+import WorkflowsIcon from '@/components/workflows-icon';
 import SettingsIcon from '@/components/settings-icon';
 import { NavUser } from '@/components/nav-user';
 import UsersIcon from '@/components/users-icon';
@@ -479,6 +480,11 @@ export function AppSidebar() {
                     title: 'Backups',
                     href: `/server/${server.id}/backups`,
                     icon: BackupsIcon,
+                },
+                {
+                    title: 'Workflows',
+                    href: `/server/${server.id}/workflows`,
+                    icon: WorkflowsIcon,
                 },
                 {
                     title: 'Users',

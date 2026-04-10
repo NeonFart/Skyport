@@ -74,6 +74,11 @@ class Server extends Model
         return $this->hasMany(Backup::class);
     }
 
+    public function workflows(): HasMany
+    {
+        return $this->hasMany(Workflow::class);
+    }
+
     public function serverUsers(): HasMany
     {
         return $this->hasMany(ServerUser::class);
