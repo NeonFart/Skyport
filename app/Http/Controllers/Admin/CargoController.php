@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreCargoRequest;
 use App\Http\Requests\Admin\UpdateCargoRequest;
 use App\Models\Cargo;
 use App\Services\CargoDefinitionService;
+use App\Services\DepotCatalogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -23,6 +24,7 @@ class CargoController extends Controller
 {
     public function __construct(
         private CargoDefinitionService $cargoDefinitionService,
+        private DepotCatalogService $depotCatalog,
     ) {}
 
     public function index(Request $request): Response
@@ -69,6 +71,7 @@ class CargoController extends Controller
             'filters' => [
                 'search' => $request->input('search', ''),
             ],
+            'depot' => $this->depotCatalog->payload(),
         ]);
     }
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CargoController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DepotController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\NodesController;
 use App\Http\Controllers\Admin\ServersController;
@@ -70,6 +71,15 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])
             CargoController::class,
             'destroy',
         ])->name('cargo.destroy');
+
+        Route::post('depot/{key}/install', [
+            DepotController::class,
+            'install',
+        ])->name('depot.install');
+        Route::delete('depot/{key}', [
+            DepotController::class,
+            'destroy',
+        ])->name('depot.destroy');
 
         Route::get('locations', [LocationsController::class, 'index'])->name(
             'locations.index',
