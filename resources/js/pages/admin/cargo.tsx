@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Download, Ellipsis, FileUp, Plus, Trash2, Upload } from 'lucide-react';
+import { Download, Ellipsis, FileUp, Plus, Trash2, Upload, Warehouse } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import {
     bulkDestroy,
@@ -11,6 +11,8 @@ import {
 } from '@/routes/admin/cargo';
 import { ConfirmDeleteDialog, DataTable } from '@/components/admin/data-table';
 import type { Column, PaginatedData } from '@/components/admin/data-table';
+import DepotModal from '@/components/admin/depot-modal';
+import type { DepotPayload } from '@/components/admin/depot-modal';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
@@ -101,6 +103,7 @@ type AdminCargo = {
 type Props = {
     cargo: PaginatedData<AdminCargo>;
     filters: { search: string };
+    depot: DepotPayload;
 };
 
 type CreateCargoFormData = {
@@ -134,6 +137,7 @@ const tabs: Tab[] = [
 function sourceLabel(sourceType: AdminCargo['source_type']): string {
     return sourceType === 'pterodactyl' ? 'Pterodactyl egg' : 'Skyport Cargo';
 }
+
 
 function stringifyCargofile(definition: CargoDefinition): string {
     return JSON.stringify(definition, null, 4);
@@ -268,7 +272,7 @@ function CreateCargoModal({
                             onChange={(event) =>
                                 form.setData('author', event.target.value)
                             }
-                            placeholder="hello@skyport.sh"
+                            placeholder="hello@skyport.dev"
                             required
                         />
                         <InputError message={form.errors.author} />
@@ -870,11 +874,12 @@ function CargoModal({
     );
 }
 
-export default function Cargo({ cargo, filters }: Props) {
+export default function Cargo({ cargo, filters, depot }: Props) {
     const [search, setSearch] = useState(filters.search);
     const viewingCargoDialog = useDialogState<AdminCargo>();
     const creatingCargoDialog = useDialogState<boolean>();
     const importingCargoDialog = useDialogState<boolean>();
+    const depotDialog = useDialogState<boolean>();
     const [deletingCargo, setDeletingCargo] = useState<AdminCargo | null>(null);
     const [singleDeleting, setSingleDeleting] = useState(false);
 
@@ -985,6 +990,14 @@ export default function Cargo({ cargo, filters }: Props) {
                             <Button
                                 size="table"
                                 variant="outline"
+                                onClick={() => depotDialog.show(true)}
+                            >
+                                <Warehouse className="h-3.5 w-3.5" />
+                                Depot
+                            </Button>
+                            <Button
+                                size="table"
+                                variant="outline"
                                 onClick={() => importingCargoDialog.show(true)}
                             >
                                 <FileUp className="h-3.5 w-3.5" />
@@ -1013,6 +1026,14 @@ export default function Cargo({ cargo, filters }: Props) {
                 <ImportCargoModal
                     open={importingCargoDialog.open}
                     onClose={importingCargoDialog.hide}
+                />
+            ) : null}
+
+            {depotDialog.payload ? (
+                <DepotModal
+                    depot={depot}
+                    open={depotDialog.open}
+                    onClose={depotDialog.hide}
                 />
             ) : null}
 
