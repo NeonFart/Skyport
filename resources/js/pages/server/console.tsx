@@ -725,15 +725,6 @@ export default function ServerConsole({ server }: Props) {
 				return [...currentLines, ...appendedLines].slice(-MAX_CONSOLE_LINES);
 			});
 
-			const viewport = consoleViewportRef.current;
-
-			if (viewport && isAtBottomRef.current) {
-				requestAnimationFrame(() => {
-					requestAnimationFrame(() => {
-						viewport.scrollTop = viewport.scrollHeight;
-					});
-				});
-			}
 		},
 		[],
 	);
@@ -1036,7 +1027,7 @@ export default function ServerConsole({ server }: Props) {
 		};
 	}, [connect]);
 
-	const isAtBottomRef = useRef(true);
+	const lastConsoleLineId = consoleLines.at(-1)?.id ?? 0;
 
 	useEffect(() => {
 		const viewport = consoleViewportRef.current;
@@ -1045,15 +1036,12 @@ export default function ServerConsole({ server }: Props) {
 			return;
 		}
 
-		const handleScroll = () => {
-			const { scrollTop, scrollHeight, clientHeight } = viewport;
-			isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 30;
-		};
-
-		viewport.addEventListener("scroll", handleScroll, { passive: true });
-
-		return () => viewport.removeEventListener("scroll", handleScroll);
-	}, []);
+		// Force scroll to bottom on every new console line.
+		viewport.scrollTop = viewport.scrollHeight;
+		requestAnimationFrame(() => {
+			viewport.scrollTop = viewport.scrollHeight;
+		});
+	}, [lastConsoleLineId]);
 
 	const sendPowerSignal = async (signal: ServerPowerSignal) => {
 		setSubmittingAction(signal);
