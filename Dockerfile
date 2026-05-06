@@ -2,7 +2,7 @@ FROM php:8.3-fpm-alpine AS base
 
 # Dépendances système
 RUN apk add --no-cache \
-    nodejs npm curl unzip git \
+    nodejs npm curl unzip git bash \
     libpng-dev oniguruma-dev libxml2-dev \
     sqlite-dev
 
@@ -12,9 +12,8 @@ RUN docker-php-ext-install pdo pdo_sqlite mbstring exif pcntl bcmath gd
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Bun
-RUN curl -fsSL https://bun.sh/install | sh
-ENV PATH="/root/.bun/bin:$PATH"
+# Bun — installation via npm (Alpine-compatible)
+RUN npm install -g bun
 
 WORKDIR /var/www
 
@@ -27,13 +26,13 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN bun install && bun run build
 
 # Permissions
-RUN chmod -R 775 storage bootstrap/cache
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN chmod -R 775 storage bootstrap/cache && \
+    chown -R www-data:www-data storage bootstrap/cache
 
-# Génère la clé + migrations
-RUN cp .env.example .env \
-    && php artisan key:generate \
-    && php artisan migrate --force
+# Setup Laravel
+RUN cp .env.example .env && \
+    php artisan key:generate && \
+    php artisan migrate --force
 
 EXPOSE 8000
 
